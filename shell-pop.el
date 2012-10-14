@@ -144,8 +144,6 @@ selected window height (10-100): ")
 (defun shell-pop-window-position-p ()
   shell-pop-window-position)
 
-(shell-pop-window-position-p)
-
 (provide 'shell-pop)
 
 ;;; shell-pop.el ends here.
