@@ -5,7 +5,7 @@
 ;; Author:        Kazuo YAGI <kazuo.yagi@gmail.com>
 ;; Maintainer:    Kazuo YAGI <kazuo.yagi@gmail.com>
 ;; Created:       2009-05-31 23:57:08
-;; Last-Updated:  2012-10-14 21:17:09
+;; Last-Updated:  2012-10-24 02:01:08
 ;; Keywords:      shell, terminal, tools
 ;; Compatibility: GNU Emacs 23.x, 24.x
 
@@ -47,6 +47,8 @@
 ;; ; The number for the percentage for selected window.
 ;; ; If 100, shell-pop use the whole of selected window, not spliting. 
 ;; (shell-pop-set-window-height 60)
+;; ; The default directory when shell-pop invokes
+;; (setq shell-pop-default-directory (expand-file-name "/Users/kyagi/git/"))
 
 ;;; Code:
 (require 'term)
@@ -55,6 +57,7 @@
 (defvar shell-pop-last-window nil)
 (defvar shell-pop-window-height 30) ; percentage for shell-buffer window height
 (defvar shell-pop-window-position "bottom")
+(defvar shell-pop-default-directory nil)
 
 (defvar shell-pop-internal-mode "shell")
 (defvar shell-pop-internal-mode-buffer "*shell*")
@@ -129,6 +132,8 @@ selected window height (10-100): ")
                                 (round (* (window-height) (/ shell-pop-window-height 100.0)))))
                 (if (string= shell-pop-window-position "bottom")
                     (other-window 1))))
+					(if (and shell-pop-default-directory (file-directory-p shell-pop-default-directory))
+							(cd shell-pop-default-directory))
           (if (not (get-buffer shell-pop-internal-mode-buffer))
               (funcall (eval shell-pop-internal-mode-func))
             (switch-to-buffer shell-pop-internal-mode-buffer))))))
