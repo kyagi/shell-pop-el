@@ -24,7 +24,7 @@ Just hit the key you bind to `shell-pop-set-universal-key'. For example, Ctrl+t 
 
 Screenshot
 ----------
-
+![screenshot](https://raw.github.com/kyagi/shell-pop-el/master/screenshot.png)
 
 EmacsWiki (No longer updated)
 ----------
