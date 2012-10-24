@@ -1,9 +1,6 @@
 shell-pop-el
 ============
-
-EmacsWiki: Shell Pop (No longer updated)
-----------
-http://www.emacswiki.org/emacs/ShellPop
+shell-pop.el helps you to use shell easily on Emacs.
 
 Installation
 ----------
@@ -27,3 +24,7 @@ Just hit the key you bind to `shell-pop-set-universal-key'. For example, Ctrl+t 
 
 Screenshot
 ----------
+
+EmacsWiki (No longer updated)
+----------
+http://www.emacswiki.org/emacs/ShellPop
