@@ -1,6 +1,6 @@
 shell-pop-el
 ============
-shell-pop.el helps you to use shell easily on Emacs.
+shell-pop.el helps you to use shell easily on Emacs. Only one key action to work.
 
 Installation
 ----------
