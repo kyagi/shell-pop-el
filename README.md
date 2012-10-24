@@ -12,7 +12,7 @@ Customization
 ----------
 
     (shell-pop-set-universal-key (kbd "C-t"))
-    (shell-pop-set-internal-mode "shell")
+    (shell-pop-set-internal-mode "ansi-term")
     (shell-pop-set-internal-mode-shell "/bin/bash")
     (shell-pop-set-window-height 50)
     (shell-pop-set-window-position "bottom")
@@ -24,6 +24,7 @@ Just hit the key you bind to `shell-pop-set-universal-key'. For example, Ctrl+t 
 
 Screenshot
 ----------
+
 
 EmacsWiki (No longer updated)
 ----------
