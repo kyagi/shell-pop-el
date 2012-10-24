@@ -126,8 +126,7 @@ selected window height (10-100): ")
   (let ((w (shell-pop-get-internal-mode-buffer-window)))
     (if w
         (select-window w)
-      (progn
-                                        ; save shell-pop-last-buffer and shell-pop-last-window to return
+      (progn ; save shell-pop-last-buffer and shell-pop-last-window to return
         (setq shell-pop-last-buffer (buffer-name))
         (setq shell-pop-last-window (selected-window))
         (if (not (eq shell-pop-window-height 100))
