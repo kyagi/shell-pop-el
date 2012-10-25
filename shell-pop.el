@@ -1,4 +1,4 @@
-;;; shell-pop.el --- Helps you pop up and pop out shell buffer easily.
+;;; shell-pop.el --- helps you to use shell easily on Emacs. Only one key action to work.
 
 ;; Copyright (C) 2009, 2010, 2011, 2012  Kazuo Yagi
 
