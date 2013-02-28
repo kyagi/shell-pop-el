@@ -1,6 +1,6 @@
 ;;; shell-pop.el --- helps you to use shell easily on Emacs. Only one key action to work.
 
-;; Copyright (C) 2009, 2010, 2011, 2012  Kazuo Yagi
+;; Copyright (C) 2009, 2010, 2011, 2012, 2013  Kazuo Yagi
 
 ;; Author:        Kazuo YAGI <kazuo.yagi@gmail.com>
 ;; Maintainer:    Kazuo YAGI <kazuo.yagi@gmail.com>
@@ -143,6 +143,12 @@ selected window height (10-100): ")
         (if (not (get-buffer shell-pop-internal-mode-buffer))
             (funcall (eval shell-pop-internal-mode-func))
           (switch-to-buffer shell-pop-internal-mode-buffer))))))
+
+(defadvice shell-pop-up (around shell-pop-up-around activate)
+  (let ((cwd default-directory))
+    ad-do-it
+    (term-send-raw-string (concat "cd " cwd "\n"))
+    (term-send-raw-string "\C-l")))
 
 (defun shell-pop-out ()
   (if (not (eq shell-pop-window-height 100))
