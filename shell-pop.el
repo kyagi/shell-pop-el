@@ -32,82 +32,107 @@
 
 ;;; Configuration:
 ;;
-;; You can choose your favorite internal mode such as `shell', `terminal',
-;; `ansi-term', and `eshell'. Also you can use any shell such as
-;; `/bin/bash', `/bin/tcsh', `/bin/zsh' as you like.
+;; Use M-x customize-variable RET `shell-pop-shell-type' RET to
+;; customize the shell to use.  Four pre-set options are: `shell',
+;; `terminal', `ansi-term', and `eshell'.  You can also set your
+;; custom shell if you use other configuration.
+
+;; For `terminal' and `ansi-term' options, you can set the underlying
+;; shell by customizing `shell-pop-term-shell'.  By default, `/bin/bash'
+;; is used, but you can also use `/bin/tcsh', `/bin/zsh' or others.
 ;;
-;; A configuration sample for your .emacs is as follows.
-;;
-;; (require 'shell-pop)
-;; ; The default key-bindings to run shell-pop.
-;; (shell-pop-set-universal-key (kbd "\C-t"))
-;; ; You can choose the internal mode from "shell", "terminal", "ansi-term", and "eshell".
-;; (shell-pop-set-internal-mode "ansi-term")
-;; ; You can choose your favorite shell to run.
-;; (shell-pop-set-internal-mode-shell "/bin/zsh")
-;; ; The number for the percentage for selected window.
-;; ; If 100, shell-pop use the whole of selected window, not spliting. 
-;; (shell-pop-set-window-height 60)
-;; ; The position for shell-pop window. You can choose "top" or "bottom". 
-;; (shell-pop-set-window-position "bottom")
-;; ; The default directory when shell-pop invokes
-;; (shell-pop-set-default-directory "/Users/kyagi/git")
+;; Use M-x customize-group RET shell-pop RET to set further options
+;; such as hotkey, window height and position.
 
 ;;; Code:
+
 (require 'term)
 
-(defvar shell-pop-last-buffer nil)
-(defvar shell-pop-last-window nil)
-(defvar shell-pop-window-height 30) ; percentage for shell-buffer window height
-(defvar shell-pop-window-position "bottom")
-(defvar shell-pop-default-directory nil)
-(defvar shell-pop-universal-key nil)
+(defgroup shell-pop ()
+  "Shell-pop")
 
+(defcustom shell-pop-window-height 30
+  "Percentage for shell-buffer window height."
+  :type '(restricted-sexp
+          :match-alternatives
+          ((lambda (x) (and (integerp x)
+                            (<= x 100)
+                            (<= 0 x)))))
+  :group 'shell-pop)
+
+(defcustom shell-pop-window-position "bottom"
+  "Position of the popped buffer."
+  :type '(choice
+          (const "top")
+          (const "bottom"))
+  :group 'shell-pop)
+
+(defcustom shell-pop-universal-key nil
+  "Key binding used to pop in and out of the shell.
+
+The input format is the same as that of `kbd'."
+  :type '(choice string (const nil))
+  :set 'shell-pop--set-universal-key
+  :group 'shell-pop)
+
+(defun shell-pop--set-universal-key (symbol value)
+  (set-default symbol value)
+  (when value (global-set-key (read-kbd-macro value) 'shell-pop))
+  (when (and (string= shell-pop-internal-mode "ansi-term")
+             shell-pop-universal-key)
+    (define-key term-raw-map (read-kbd-macro value) 'shell-pop)))
+
+(defcustom shell-pop-default-directory nil
+  "If non-nil, when first starting the shell, cd to this directory."
+  :type 'directory
+  :group 'shell-pop)
+
+(defcustom shell-pop-shell-type '("shell" "*shell*" (lambda () (shell)))
+  "Type of shell that is launched when first popping into a shell.
+
+The value is a list with these items:
+ - Internal name of the shell type.  This should be unique \"id\".
+ - Name of the buffer this shell opens.
+ - A function that launches the shell."
+  :type '(choice
+          (list :tag "Custom" string string function)
+          (const :tag "shell"
+                 ("shell" "*shell*" (lambda () (shell))))
+          (const :tag "terminal"
+                 ("terminal" "*terminal*" (lambda () (term shell-pop-term-shell))))
+          (const :tag "ansi-term"
+                 ("ansi-term" "*ansi-term*" (lambda () (ansi-term shell-pop-term-shell))))
+          (const :tag "eshell"
+                 ("eshell" "*eshell*" (lambda () (eshell)))))
+  :set 'shell-pop--set-shell-type
+  :group 'shell-pop)
+
+(defun shell-pop--set-shell-type (symbol value)
+  (set-default symbol value)
+  (setq shell-pop-internal-mode (nth 0 value))
+  (setq shell-pop-internal-mode-buffer (nth 1 value))
+  (setq shell-pop-internal-mode-func (nth 2 value))
+  (when (and (string= shell-pop-internal-mode "ansi-term")
+             shell-pop-universal-key)
+    (define-key term-raw-map (read-kbd-macro shell-pop-universal-key) 'shell-pop)))
+
+(defcustom shell-pop-term-shell "/bin/bash"
+  "Shell used in `term' and `ansi-term'."
+  :type 'string
+  :group 'shell-pop)
+
+;; internal{
 (defvar shell-pop-internal-mode "shell")
 (defvar shell-pop-internal-mode-buffer "*shell*")
 (defvar shell-pop-internal-mode-func '(lambda () (shell)))
-(defvar shell-pop-internal-mode-shell "/bin/bash")
-
-(defvar shell-pop-internal-mode-list
-  (list
-    ; mode, buffer, function
-    '("shell"     "*shell*"     '(lambda () (shell)))
-    '("terminal"  "*terminal*"  '(lambda () (term shell-pop-internal-mode-shell)))
-    '("ansi-term" "*ansi-term*" '(lambda () (ansi-term shell-pop-internal-mode-shell)))
-    '("eshell"    "*eshell*"    '(lambda () (eshell)))))
-
-(defun shell-pop-set-window-height (number)
-  (interactive "nInput the number for the percentage of \
-selected window height (10-100): ")
-  (setq shell-pop-window-height number))
-
-(defun shell-pop-set-window-position (position)
-  (interactive "sInput the position for shell-pop (top|bottom): ")
-  (setq shell-pop-window-position position))
-
-(defun shell-pop-set-internal-mode (mode)
-  (interactive "sInput your favorite mode (shell|terminal|ansi-term|eshell): ")
-  (setq shell-pop-internal-mode mode)
-  (if (string= shell-pop-internal-mode "ansi-term")
-    (define-key term-raw-map shell-pop-universal-key 'shell-pop))
-  (if (catch 'found
-        (dolist (l shell-pop-internal-mode-list)
-          (if (string-match mode (car l))
-              (progn
-                (setq shell-pop-internal-mode-buffer (nth 1 l))
-                (setq shell-pop-internal-mode-func (nth 2 l))
-                (throw 'found t)))))
-      t
-    nil))
-
-(defun shell-pop-set-internal-mode-shell (shell)
-  (interactive (list (read-from-minibuffer "Input your favorite shell:"
-                                           shell-pop-internal-mode-shell)))
-  (setq shell-pop-internal-mode-shell shell))
+(defvar shell-pop-last-buffer nil)
+(defvar shell-pop-last-window nil)
+;; internal}
 
 (defun shell-pop-check-internal-mode-buffer ()
-  (if (get-buffer shell-pop-internal-mode-buffer)
-    (if (term-check-proc shell-pop-internal-mode-buffer)
+  (when (get-buffer shell-pop-internal-mode-buffer)
+    (if (or (term-check-proc shell-pop-internal-mode-buffer)
+            (string= shell-pop-internal-mode "eshell"))
         shell-pop-internal-mode-buffer
       (kill-buffer shell-pop-internal-mode-buffer)
       nil))
@@ -116,6 +141,7 @@ selected window height (10-100): ")
 (defun shell-pop-get-internal-mode-buffer-window ()
   (get-buffer-window (shell-pop-check-internal-mode-buffer)))
 
+;;;###autoload
 (defun shell-pop ()
   (interactive)
   (if (equal (buffer-name) shell-pop-internal-mode-buffer)
@@ -126,23 +152,22 @@ selected window height (10-100): ")
   (let ((w (shell-pop-get-internal-mode-buffer-window)))
     (if w
         (select-window w)
-      (progn ; save shell-pop-last-buffer and shell-pop-last-window to return
-        (setq shell-pop-last-buffer (buffer-name))
-        (setq shell-pop-last-window (selected-window))
-        (if (not (eq shell-pop-window-height 100))
-            (progn
-              (split-window (selected-window)
-                            (if (string= shell-pop-window-position "bottom")
-                                (round (* (window-height)
-                                          (/ (- 100 shell-pop-window-height) 100.0)))
-                              (round (* (window-height) (/ shell-pop-window-height 100.0)))))
-              (if (string= shell-pop-window-position "bottom")
-                  (other-window 1))))
-        (if (and shell-pop-default-directory (file-directory-p shell-pop-default-directory))
-            (cd shell-pop-default-directory))
-        (if (not (get-buffer shell-pop-internal-mode-buffer))
-            (funcall (eval shell-pop-internal-mode-func))
-          (switch-to-buffer shell-pop-internal-mode-buffer))))))
+      ;; save shell-pop-last-buffer and shell-pop-last-window to return
+      (setq shell-pop-last-buffer (buffer-name))
+      (setq shell-pop-last-window (selected-window))
+      (when (not (eq shell-pop-window-height 100))
+        (split-window (selected-window)
+                      (if (string= shell-pop-window-position "bottom")
+                          (round (* (window-height)
+                                    (/ (- 100 shell-pop-window-height) 100.0)))
+                        (round (* (window-height) (/ shell-pop-window-height 100.0)))))
+        (if (string= shell-pop-window-position "bottom")
+            (other-window 1)))
+      (when (and shell-pop-default-directory (file-directory-p shell-pop-default-directory))
+        (cd shell-pop-default-directory))
+      (if (not (get-buffer shell-pop-internal-mode-buffer))
+          (funcall (eval shell-pop-internal-mode-func))
+        (switch-to-buffer shell-pop-internal-mode-buffer)))))
 
 (defadvice shell-pop-up (around shell-pop-up-around activate)
   (let ((cwd default-directory))
@@ -151,24 +176,11 @@ selected window height (10-100): ")
     (term-send-raw-string "\C-l")))
 
 (defun shell-pop-out ()
-  (if (not (eq shell-pop-window-height 100))
-      (progn
-        (delete-window)
-        (if (string= shell-pop-window-position "bottom")
-            (select-window shell-pop-last-window))))
+  (when (not (eq shell-pop-window-height 100))
+    (delete-window)
+    (when (string= shell-pop-window-position "bottom")
+      (select-window shell-pop-last-window)))
   (switch-to-buffer shell-pop-last-buffer))
-
-(defun shell-pop-window-position-p ()
-  shell-pop-window-position)
-
-(defun shell-pop-set-universal-key (key)
-  (interactive)
-  (global-set-key key 'shell-pop)
-  (setq shell-pop-universal-key key))
-
-(defun shell-pop-set-default-directory (path)
-  (interactive)
-  (setq shell-pop-default-directory path))
 
 (provide 'shell-pop)
 
