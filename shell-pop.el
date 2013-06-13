@@ -121,6 +121,12 @@ The value is a list with these items:
   :type 'string
   :group 'shell-pop)
 
+(defcustom shell-pop-autocd-to-working-dir t
+  "If non-nil, automatically `cd' to working directory of the
+buffer from which the `shell-pop' command was invoked."
+  :type 'boolean
+  :group 'shell-pop)
+
 ;; internal{
 (defvar shell-pop-internal-mode "shell")
 (defvar shell-pop-internal-mode-buffer "*shell*")
@@ -170,10 +176,16 @@ The value is a list with these items:
         (switch-to-buffer shell-pop-internal-mode-buffer)))))
 
 (defadvice shell-pop-up (around shell-pop-up-around activate)
-  (let ((cwd default-directory))
+  (let ((cwd (replace-regexp-in-string "\\\\" "/" default-directory)))
     ad-do-it
-    (term-send-raw-string (concat "cd " cwd "\n"))
-    (term-send-raw-string "\C-l")))
+    (when (and shell-pop-autocd-to-working-dir
+               (not (equal cwd default-directory)))
+      (if (string= shell-pop-internal-mode "eshell")
+          (progn
+            (insert (concat "cd " cwd))
+            (eshell-send-input))
+        (term-send-raw-string (concat "cd " cwd "\n"))
+        (term-send-raw-string "\C-l")))))
 
 (defun shell-pop-out ()
   (when (not (eq shell-pop-window-height 100))
