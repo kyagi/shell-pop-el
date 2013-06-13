@@ -11,13 +11,12 @@ Make sure to place shell-pop.el somewhere in the load-path and add the following
 Customization
 ----------
 
-    (shell-pop-set-universal-key (kbd "C-t"))
-    (shell-pop-set-internal-mode "ansi-term")
-    (shell-pop-set-internal-mode-shell "/bin/bash")
-    (shell-pop-set-window-height 50)
-    (shell-pop-set-window-position "bottom")
-    (shell-pop-set-default-directory "/Users/kyagi/git")
-    
+Use `M-x customize-variable RET shell-pop-shell-type RET` to customize the shell to use.  Four pre-set options are: `shell`, `terminal`, `ansi-term`, and `eshell`.  You can also set your custom shell if you use other configuration.
+
+For `terminal` and `ansi-term` options, you can set the underlying shell by customizing `shell-pop-term-shell`.  By default, `/bin/bash` is used, but you can also use `/bin/tcsh`, `/bin/zsh` or others.
+
+Use `M-x customize-group RET shell-pop RET` to set further options such as hotkey, window height and position.
+
 Usage
 ----------
 Just hit the key you bind to `shell-pop-set-universal-key'. For example, Ctrl+t above.
