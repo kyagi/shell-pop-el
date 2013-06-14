@@ -51,6 +51,14 @@
 (defgroup shell-pop ()
   "Shell-pop")
 
+;; internal{
+(defvar shell-pop-internal-mode "shell")
+(defvar shell-pop-internal-mode-buffer "*shell*")
+(defvar shell-pop-internal-mode-func '(lambda () (shell)))
+(defvar shell-pop-last-buffer nil)
+(defvar shell-pop-last-window nil)
+;; internal}
+
 (defcustom shell-pop-window-height 30
   "Percentage for shell-buffer window height."
   :type '(restricted-sexp
@@ -65,21 +73,6 @@
   :type '(choice
           (const "top")
           (const "bottom"))
-  :group 'shell-pop)
-
-(defun shell-pop--set-universal-key (symbol value)
-  (set-default symbol value)
-  (when value (global-set-key (read-kbd-macro value) 'shell-pop))
-  (when (and (string= shell-pop-internal-mode "ansi-term")
-             shell-pop-universal-key)
-    (define-key term-raw-map (read-kbd-macro value) 'shell-pop)))
-
-(defcustom shell-pop-universal-key nil
-  "Key binding used to pop in and out of the shell.
-
-The input format is the same as that of `kbd'."
-  :type '(choice string (const nil))
-  :set 'shell-pop--set-universal-key
   :group 'shell-pop)
 
 (defcustom shell-pop-default-directory nil
@@ -127,13 +120,20 @@ buffer from which the `shell-pop' command was invoked."
   :type 'boolean
   :group 'shell-pop)
 
-;; internal{
-(defvar shell-pop-internal-mode "shell")
-(defvar shell-pop-internal-mode-buffer "*shell*")
-(defvar shell-pop-internal-mode-func '(lambda () (shell)))
-(defvar shell-pop-last-buffer nil)
-(defvar shell-pop-last-window nil)
-;; internal}
+(defun shell-pop--set-universal-key (symbol value)
+  (set-default symbol value)
+  (when value (global-set-key (read-kbd-macro value) 'shell-pop))
+  (when (and (string= shell-pop-internal-mode "ansi-term")
+             shell-pop-universal-key)
+    (define-key term-raw-map (read-kbd-macro value) 'shell-pop)))
+
+(defcustom shell-pop-universal-key nil
+  "Key binding used to pop in and out of the shell.
+
+The input format is the same as that of `kbd'."
+  :type '(choice string (const nil))
+  :set 'shell-pop--set-universal-key
+  :group 'shell-pop)
 
 (defun shell-pop-check-internal-mode-buffer ()
   (when (get-buffer shell-pop-internal-mode-buffer)
