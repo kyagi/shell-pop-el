@@ -156,7 +156,8 @@ The input format is the same as that of `kbd'."
     (shell-pop-up)))
 
 (defun shell-pop-up ()
-  (let ((w (shell-pop-get-internal-mode-buffer-window)))
+  (let ((w (shell-pop-get-internal-mode-buffer-window))
+        (cwd (replace-regexp-in-string "\\\\" "/" default-directory)))
     (if w
         (select-window w)
       ;; save shell-pop-last-buffer and shell-pop-last-window to return
@@ -174,17 +175,20 @@ The input format is the same as that of `kbd'."
         (cd shell-pop-default-directory))
       (if (not (get-buffer shell-pop-internal-mode-buffer))
           (funcall (eval shell-pop-internal-mode-func))
-        (switch-to-buffer shell-pop-internal-mode-buffer)))))
-
-(defadvice shell-pop-up (around shell-pop-up-around activate)
-  (let ((cwd (replace-regexp-in-string "\\\\" "/" default-directory)))
-    ad-do-it
+        (switch-to-buffer shell-pop-internal-mode-buffer)))
     (when (and shell-pop-autocd-to-working-dir
                (not (equal cwd default-directory)))
       (if (string= shell-pop-internal-mode "eshell")
           (progn
             (insert (concat "cd " cwd))
-            (eshell-send-input))
+            (eshell-send-input)
+            (let ((inhibit-read-only t))
+              (delete-region
+               (save-excursion
+                 (goto-char eshell-last-input-start)
+                 (beginning-of-line)
+                 (point))
+               eshell-last-input-end)))
         (term-send-raw-string (concat "cd " cwd "\n"))
         (term-send-raw-string "\C-l")))))
 
