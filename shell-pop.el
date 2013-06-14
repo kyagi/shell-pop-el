@@ -67,6 +67,13 @@
           (const "bottom"))
   :group 'shell-pop)
 
+(defun shell-pop--set-universal-key (symbol value)
+  (set-default symbol value)
+  (when value (global-set-key (read-kbd-macro value) 'shell-pop))
+  (when (and (string= shell-pop-internal-mode "ansi-term")
+             shell-pop-universal-key)
+    (define-key term-raw-map (read-kbd-macro value) 'shell-pop)))
+
 (defcustom shell-pop-universal-key nil
   "Key binding used to pop in and out of the shell.
 
@@ -75,17 +82,19 @@ The input format is the same as that of `kbd'."
   :set 'shell-pop--set-universal-key
   :group 'shell-pop)
 
-(defun shell-pop--set-universal-key (symbol value)
-  (set-default symbol value)
-  (when value (global-set-key (read-kbd-macro value) 'shell-pop))
-  (when (and (string= shell-pop-internal-mode "ansi-term")
-             shell-pop-universal-key)
-    (define-key term-raw-map (read-kbd-macro value) 'shell-pop)))
-
 (defcustom shell-pop-default-directory nil
   "If non-nil, when first starting the shell, cd to this directory."
   :type 'directory
   :group 'shell-pop)
+
+(defun shell-pop--set-shell-type (symbol value)
+  (set-default symbol value)
+  (setq shell-pop-internal-mode (nth 0 value))
+  (setq shell-pop-internal-mode-buffer (nth 1 value))
+  (setq shell-pop-internal-mode-func (nth 2 value))
+  (when (and (string= shell-pop-internal-mode "ansi-term")
+             shell-pop-universal-key)
+    (define-key term-raw-map (read-kbd-macro shell-pop-universal-key) 'shell-pop)))
 
 (defcustom shell-pop-shell-type '("shell" "*shell*" (lambda () (shell)))
   "Type of shell that is launched when first popping into a shell.
@@ -106,15 +115,6 @@ The value is a list with these items:
                  ("eshell" "*eshell*" (lambda () (eshell)))))
   :set 'shell-pop--set-shell-type
   :group 'shell-pop)
-
-(defun shell-pop--set-shell-type (symbol value)
-  (set-default symbol value)
-  (setq shell-pop-internal-mode (nth 0 value))
-  (setq shell-pop-internal-mode-buffer (nth 1 value))
-  (setq shell-pop-internal-mode-func (nth 2 value))
-  (when (and (string= shell-pop-internal-mode "ansi-term")
-             shell-pop-universal-key)
-    (define-key term-raw-map (read-kbd-macro shell-pop-universal-key) 'shell-pop)))
 
 (defcustom shell-pop-term-shell "/bin/bash"
   "Shell used in `term' and `ansi-term'."
