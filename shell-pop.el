@@ -49,7 +49,8 @@
 (require 'term)
 
 (defgroup shell-pop ()
-  "Shell-pop")
+  "Shell-pop"
+  :group 'shell)
 
 ;; internal{
 (defvar shell-pop-internal-mode "shell")
