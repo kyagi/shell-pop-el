@@ -128,6 +128,7 @@ buffer from which the `shell-pop' command was invoked."
              shell-pop-universal-key)
     (define-key term-raw-map (read-kbd-macro value) 'shell-pop)))
 
+;;;###autoload
 (defcustom shell-pop-universal-key nil
   "Key binding used to pop in and out of the shell.
 
