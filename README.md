@@ -17,7 +17,7 @@ For `terminal` and `ansi-term` options, you can set the underlying shell by cust
 
 Use `M-x customize-group RET shell-pop RET` to set further options such as hotkey, window height and position.
 
-After saving the customized values, your .emacs file would be like as follows. Note that you need to type Ctrl+q beforehand when you input a CONTROL CHARACTER on Emacs. For example, if you want to assign "C-t"(=Ctrl+t) to the shell-pop hot key, Ctrl+q Ctrl+t results in what you expect for `shell-pop-universal-key'. This is displayed as ^T in the example below.
+After saving the customized values, your .emacs file will be like as follows. 
 
     (custom-set-variables
      ;; custom-set-variables was added by Custom.
@@ -27,7 +27,7 @@ After saving the customized values, your .emacs file would be like as follows. N
      '(shell-pop-default-directory "/Users/kyagi/git")
      '(shell-pop-shell-type (quote ("ansi-term" "*ansi-term*" (lambda nil (ansi-term shell-pop-term-shell)))))
      '(shell-pop-term-shell "/bin/bash")
-     '(shell-pop-universal-key "^T")
+     '(shell-pop-universal-key "C-t")
      '(shell-pop-window-height 30)
      '(shell-pop-window-position "bottom"))
 
