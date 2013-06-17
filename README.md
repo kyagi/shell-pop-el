@@ -19,15 +19,15 @@ Use `M-x customize-group RET shell-pop RET` to set further options such as hotke
 
 After saving the customized values, your .emacs file would be like as follows. Note that you need to type Ctrl-q beforehand when you input a CONTROL CHARACTER on Emacs. For example, if you want to assign "C-t"(=Ctrl-t) to the shell-pop hot key, Ctrl-q Ctrl-t results in what you expect for `shell-pop-universal-key' in the example below.
 
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(shell-pop-universal-key "")
- '(shell-pop-shell-type (quote ("ansi-term" "*ansi-term*" (lambda nil (ansi-term shell-pop-term-shell)))))
- '(shell-pop-term-shell "/bin/bash")
- '(shell-pop-window-position "bottom"))
+    (custom-set-variables
+     ;; custom-set-variables was added by Custom.
+     ;; If you edit it by hand, you could mess it up, so be careful.
+     ;; Your init file should contain only one such instance.
+     ;; If there is more than one, they won't work right.
+     '(shell-pop-universal-key "")
+     '(shell-pop-shell-type (quote ("ansi-term" "*ansi-term*" (lambda nil (ansi-term shell-pop-term-shell)))))
+     '(shell-pop-term-shell "/bin/bash")
+     '(shell-pop-window-position "bottom"))
 
 Usage
 ----------
