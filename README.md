@@ -16,6 +16,7 @@ Use `M-x customize-variable RET shell-pop-shell-type RET` to customize the shell
 For `terminal` and `ansi-term` options, you can set the underlying shell by customizing `shell-pop-term-shell`.  By default, `/bin/bash` is used, but you can also use `/bin/tcsh`, `/bin/zsh` or others.
 
 Use `M-x customize-group RET shell-pop RET` to set further options such as hotkey, window height and position.
+You can get a full frame layout by setting 100 to `shell-pop-window-height`.
 
 After saving the customized values, your .emacs file will be like as follows. 
 
