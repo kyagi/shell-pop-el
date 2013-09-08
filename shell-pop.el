@@ -153,7 +153,7 @@ The input format is the same as that of `kbd'."
 ;;;###autoload
 (defun shell-pop ()
   (interactive)
-  (if (equal (buffer-name) shell-pop-internal-mode-buffer)
+  (if (string= (buffer-name) shell-pop-internal-mode-buffer)
       (shell-pop-out)
     (shell-pop-up)))
 
@@ -183,7 +183,7 @@ The input format is the same as that of `kbd'."
           (funcall (eval shell-pop-internal-mode-func))
         (switch-to-buffer shell-pop-internal-mode-buffer)))
     (when (and shell-pop-autocd-to-working-dir
-               (not (equal cwd default-directory)))
+               (not (string= cwd default-directory)))
       (if (string= shell-pop-internal-mode "eshell")
           (progn
             (insert (concat "cd " cwd))
