@@ -201,7 +201,7 @@ The input format is the same as that of `kbd'."
 (defun shell-pop-out ()
   (if (string= shell-pop-window-position "full")
       (jump-to-register :shell-pop)
-    (when (not (eq shell-pop-window-height 100))
+    (when (not (= shell-pop-window-height 100))
       (delete-window)
       (when (string= shell-pop-window-position "bottom")
         (select-window shell-pop-last-window)))
