@@ -5,7 +5,7 @@
 ;; Author:        Kazuo YAGI <kazuo.yagi@gmail.com>
 ;; Maintainer:    Kazuo YAGI <kazuo.yagi@gmail.com>
 ;; Created:       2009-05-31 23:57:08
-;; Last-Updated:  2012-10-24 17:37:48
+;; Last-Updated:  2013-09-08 16:45:00
 ;; Keywords:      shell, terminal, tools
 ;; Compatibility: GNU Emacs 23.x, 24.x
 
