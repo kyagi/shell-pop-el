@@ -73,7 +73,8 @@
   "Position of the popped buffer."
   :type '(choice
           (const "top")
-          (const "bottom"))
+          (const "bottom")
+          (const "full"))
   :group 'shell-pop)
 
 (defcustom shell-pop-default-directory nil
@@ -159,12 +160,16 @@ The input format is the same as that of `kbd'."
 (defun shell-pop-up ()
   (let ((w (shell-pop-get-internal-mode-buffer-window))
         (cwd (replace-regexp-in-string "\\\\" "/" default-directory)))
+    (when (string= shell-pop-window-position "full")
+      (window-configuration-to-register :shell-pop)
+      (delete-other-windows))
     (if w
         (select-window w)
       ;; save shell-pop-last-buffer and shell-pop-last-window to return
       (setq shell-pop-last-buffer (buffer-name))
       (setq shell-pop-last-window (selected-window))
-      (when (not (eq shell-pop-window-height 100))
+      (when (and (not (= shell-pop-window-height 100))
+                 (not (string= shell-pop-window-position "full")))
         (split-window (selected-window)
                       (if (string= shell-pop-window-position "bottom")
                           (round (* (window-height)
@@ -194,11 +199,13 @@ The input format is the same as that of `kbd'."
         (term-send-raw-string "\C-l")))))
 
 (defun shell-pop-out ()
-  (when (not (eq shell-pop-window-height 100))
-    (delete-window)
-    (when (string= shell-pop-window-position "bottom")
-      (select-window shell-pop-last-window)))
-  (switch-to-buffer shell-pop-last-buffer))
+  (if (string= shell-pop-window-position "full")
+      (jump-to-register :shell-pop)
+    (when (not (= shell-pop-window-height 100))
+      (delete-window)
+      (when (string= shell-pop-window-position "bottom")
+        (select-window shell-pop-last-window)))
+    (switch-to-buffer shell-pop-last-buffer)))
 
 (provide 'shell-pop)
 
