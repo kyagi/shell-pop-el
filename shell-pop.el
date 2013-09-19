@@ -60,6 +60,7 @@
 (defvar shell-pop-internal-mode-func '(lambda () (shell)))
 (defvar shell-pop-last-buffer nil)
 (defvar shell-pop-last-window nil)
+(defvar shell-pop-last-shell-buffer-name "")
 ;; internal}
 
 (defcustom shell-pop-window-height 30
@@ -140,27 +141,34 @@ The input format is the same as that of `kbd'."
   :set 'shell-pop--set-universal-key
   :group 'shell-pop)
 
-(defun shell-pop-check-internal-mode-buffer ()
-  (when (get-buffer shell-pop-internal-mode-buffer)
-    (if (or (term-check-proc shell-pop-internal-mode-buffer)
-            (string= shell-pop-internal-mode "eshell"))
-        shell-pop-internal-mode-buffer
-      (kill-buffer shell-pop-internal-mode-buffer)
-      nil))
-  shell-pop-internal-mode-buffer)
+(defun shell-pop--shell-buffer-name (index)
+  (if (string-match "*\\'" shell-pop-internal-mode-buffer)
+      (replace-regexp-in-string
+       "*\\'" (format "-%d*" index) shell-pop-internal-mode-buffer)
+    (format "%s-%d" shell-pop-internal-mode-buffer index)))
 
-(defun shell-pop-get-internal-mode-buffer-window ()
-  (get-buffer-window (shell-pop-check-internal-mode-buffer)))
+(defun shell-pop-check-internal-mode-buffer (index)
+  (let ((bufname (shell-pop--shell-buffer-name index)))
+    (when (get-buffer bufname)
+      (if (or (term-check-proc bufname)
+              (string= shell-pop-internal-mode "eshell"))
+          bufname
+        (kill-buffer bufname)
+        nil))
+    bufname))
+
+(defun shell-pop-get-internal-mode-buffer-window (index)
+  (get-buffer-window (shell-pop-check-internal-mode-buffer index)))
 
 ;;;###autoload
-(defun shell-pop ()
-  (interactive)
-  (if (string= (buffer-name) shell-pop-internal-mode-buffer)
+(defun shell-pop (arg)
+  (interactive "p")
+  (if (string= (buffer-name) shell-pop-last-shell-buffer-name)
       (shell-pop-out)
-    (shell-pop-up)))
+    (shell-pop-up arg)))
 
-(defun shell-pop-up ()
-  (let ((w (shell-pop-get-internal-mode-buffer-window))
+(defun shell-pop-up (index)
+  (let ((w (shell-pop-get-internal-mode-buffer-window index))
         (cwd (replace-regexp-in-string "\\\\" "/" default-directory)))
     (when (string= shell-pop-window-position "full")
       (window-configuration-to-register :shell-pop)
@@ -181,9 +189,12 @@ The input format is the same as that of `kbd'."
             (other-window 1)))
       (when (and shell-pop-default-directory (file-directory-p shell-pop-default-directory))
         (cd shell-pop-default-directory))
-      (if (not (get-buffer shell-pop-internal-mode-buffer))
+      (let ((bufname (shell-pop--shell-buffer-name index)))
+        (if (get-buffer bufname)
+            (switch-to-buffer bufname)
           (funcall (eval shell-pop-internal-mode-func))
-        (switch-to-buffer shell-pop-internal-mode-buffer)))
+          (rename-buffer bufname))
+        (setq shell-pop-last-shell-buffer-name bufname)))
     (when (and shell-pop-autocd-to-working-dir
                (not (string= cwd default-directory)))
       (if (string= shell-pop-internal-mode "eshell")
