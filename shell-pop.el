@@ -60,6 +60,7 @@
 (defvar shell-pop-internal-mode-func '(lambda () (shell)))
 (defvar shell-pop-last-buffer nil)
 (defvar shell-pop-last-window nil)
+(defvar shell-pop-last-shell-buffer-index 1)
 (defvar shell-pop-last-shell-buffer-name "")
 ;; internal}
 
@@ -162,10 +163,10 @@ The input format is the same as that of `kbd'."
 
 ;;;###autoload
 (defun shell-pop (arg)
-  (interactive "p")
+  (interactive "P")
   (if (string= (buffer-name) shell-pop-last-shell-buffer-name)
       (shell-pop-out)
-    (shell-pop-up arg)))
+    (shell-pop-up (or arg shell-pop-last-shell-buffer-index))))
 
 (defun shell-pop-up (index)
   (let ((w (shell-pop-get-internal-mode-buffer-window index))
@@ -194,7 +195,8 @@ The input format is the same as that of `kbd'."
             (switch-to-buffer bufname)
           (funcall (eval shell-pop-internal-mode-func))
           (rename-buffer bufname))
-        (setq shell-pop-last-shell-buffer-name bufname)))
+        (setq shell-pop-last-shell-buffer-name bufname
+              shell-pop-last-shell-buffer-index index)))
     (when (and shell-pop-autocd-to-working-dir
                (not (string= cwd default-directory)))
       (if (string= shell-pop-internal-mode "eshell")
