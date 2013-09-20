@@ -34,7 +34,11 @@ After saving the customized values, your .emacs file will be like as follows.
 
 Usage
 ----------
-Just hit the hot key you customized for `shell-pop-universal-key'. For example, Ctrl+t above.
+Just hit the hot key you customized for `shell-pop-universal-key`.  
+For example, `C-t` for the above case.  
+
+You can have multiple shell buffers if you run shell-pop with universal-arguments.  
+For example, `C-u 2 C-t`. You can increase the number(`2`, `3`, `4`, ...) as much as you want for different shell buffers.
 
 Screenshot
 ----------
