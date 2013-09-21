@@ -88,9 +88,9 @@
 
 (defun shell-pop--set-shell-type (symbol value)
   (set-default symbol value)
-  (setq shell-pop-internal-mode (nth 0 value))
-  (setq shell-pop-internal-mode-buffer (nth 1 value))
-  (setq shell-pop-internal-mode-func (nth 2 value))
+  (setq shell-pop-internal-mode (nth 0 value)
+        shell-pop-internal-mode-buffer (nth 1 value)
+        shell-pop-internal-mode-func (nth 2 value))
   (when (and (string= shell-pop-internal-mode "ansi-term")
              shell-pop-universal-key)
     (define-key term-raw-map (read-kbd-macro shell-pop-universal-key) 'shell-pop)))
@@ -177,8 +177,8 @@ The input format is the same as that of `kbd'."
     (if w
         (select-window w)
       ;; save shell-pop-last-buffer and shell-pop-last-window to return
-      (setq shell-pop-last-buffer (buffer-name))
-      (setq shell-pop-last-window (selected-window))
+      (setq shell-pop-last-buffer (buffer-name)
+            shell-pop-last-window (selected-window))
       (when (and (not (= shell-pop-window-height 100))
                  (not (string= shell-pop-window-position "full")))
         (split-window (selected-window)
