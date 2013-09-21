@@ -88,9 +88,9 @@
 
 (defun shell-pop--set-shell-type (symbol value)
   (set-default symbol value)
-  (setq shell-pop-internal-mode (nth 0 value))
-  (setq shell-pop-internal-mode-buffer (nth 1 value))
-  (setq shell-pop-internal-mode-func (nth 2 value))
+  (setq shell-pop-internal-mode (nth 0 value)
+        shell-pop-internal-mode-buffer (nth 1 value)
+        shell-pop-internal-mode-func (nth 2 value))
   (when (and (string= shell-pop-internal-mode "ansi-term")
              shell-pop-universal-key)
     (define-key term-raw-map (read-kbd-macro shell-pop-universal-key) 'shell-pop)))
@@ -168,6 +168,40 @@ The input format is the same as that of `kbd'."
       (shell-pop-out)
     (shell-pop-up (or arg shell-pop-last-shell-buffer-index))))
 
+(defun shell-pop--cd-to-cwd-eshell (cwd)
+  (insert (concat "cd " cwd))
+  (eshell-send-input)
+  (let ((inhibit-read-only t))
+    (delete-region
+     (save-excursion
+       (goto-char eshell-last-input-start)
+       (beginning-of-line)
+       (point))
+     eshell-last-input-end)))
+
+(defun shell-pop--cd-to-cwd-term (cwd)
+  (term-send-raw-string (concat "cd " cwd "\n"))
+  (term-send-raw-string "\C-l"))
+
+(defun shell-pop--cd-to-cwd (cwd)
+  (if (string= shell-pop-internal-mode "eshell")
+      (shell-pop--cd-to-cwd-eshell cwd)
+    (shell-pop--cd-to-cwd-term cwd)))
+
+(defsubst shell-pop--calculate-window-size ()
+  (if (string= shell-pop-window-position "bottom")
+      (round (* (window-height) (/ (- 100 shell-pop-window-height) 100.0)))
+    (round (* (window-height) (/ shell-pop-window-height 100.0)))))
+
+(defun shell-pop--switch-to-shell-buffer (index)
+  (let ((bufname (shell-pop--shell-buffer-name index)))
+    (if (get-buffer bufname)
+        (switch-to-buffer bufname)
+      (funcall (eval shell-pop-internal-mode-func))
+      (rename-buffer bufname))
+    (setq shell-pop-last-shell-buffer-name bufname
+          shell-pop-last-shell-buffer-index index)))
+
 (defun shell-pop-up (index)
   (let ((w (shell-pop-get-internal-mode-buffer-window index))
         (cwd (replace-regexp-in-string "\\\\" "/" default-directory)))
@@ -177,41 +211,19 @@ The input format is the same as that of `kbd'."
     (if w
         (select-window w)
       ;; save shell-pop-last-buffer and shell-pop-last-window to return
-      (setq shell-pop-last-buffer (buffer-name))
-      (setq shell-pop-last-window (selected-window))
+      (setq shell-pop-last-buffer (buffer-name)
+            shell-pop-last-window (selected-window))
       (when (and (not (= shell-pop-window-height 100))
                  (not (string= shell-pop-window-position "full")))
-        (split-window (selected-window)
-                      (if (string= shell-pop-window-position "bottom")
-                          (round (* (window-height)
-                                    (/ (- 100 shell-pop-window-height) 100.0)))
-                        (round (* (window-height) (/ shell-pop-window-height 100.0)))))
-        (if (string= shell-pop-window-position "bottom")
-            (other-window 1)))
+        (split-window (selected-window) (shell-pop--calculate-window-size))
+        (when (string= shell-pop-window-position "bottom")
+          (other-window 1)))
       (when (and shell-pop-default-directory (file-directory-p shell-pop-default-directory))
         (cd shell-pop-default-directory))
-      (let ((bufname (shell-pop--shell-buffer-name index)))
-        (if (get-buffer bufname)
-            (switch-to-buffer bufname)
-          (funcall (eval shell-pop-internal-mode-func))
-          (rename-buffer bufname))
-        (setq shell-pop-last-shell-buffer-name bufname
-              shell-pop-last-shell-buffer-index index)))
+      (shell-pop--switch-to-shell-buffer index))
     (when (and shell-pop-autocd-to-working-dir
                (not (string= cwd default-directory)))
-      (if (string= shell-pop-internal-mode "eshell")
-          (progn
-            (insert (concat "cd " cwd))
-            (eshell-send-input)
-            (let ((inhibit-read-only t))
-              (delete-region
-               (save-excursion
-                 (goto-char eshell-last-input-start)
-                 (beginning-of-line)
-                 (point))
-               eshell-last-input-end)))
-        (term-send-raw-string (concat "cd " cwd "\n"))
-        (term-send-raw-string "\C-l")))))
+      (shell-pop--cd-to-cwd cwd))))
 
 (defun shell-pop-out ()
   (if (string= shell-pop-window-position "full")
