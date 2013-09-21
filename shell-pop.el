@@ -5,9 +5,9 @@
 ;; Author:        Kazuo YAGI <kazuo.yagi@gmail.com>
 ;; Maintainer:    Kazuo YAGI <kazuo.yagi@gmail.com>
 ;; URL:           http://github.com/kyagi/shell-pop-el
-;; Version:       0.1
+;; Version:       0.2
 ;; Created:       2009-05-31 23:57:08
-;; Last-Updated:  2013-09-08 16:45:00
+;; Last-Updated:  2013-09-21 19:00:00
 ;; Keywords:      shell, terminal, tools
 ;; Compatibility: GNU Emacs 23.x, 24.x
 
