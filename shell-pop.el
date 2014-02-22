@@ -47,6 +47,13 @@
 
 ;;; Code:
 
+(eval-when-compile
+  (defvar shell-pop-universal-key)
+  (defvar eshell-last-input-start)
+  (defvar eshell-last-input-end))
+
+(declare-function eshell-send-input "esh-mode")
+
 (require 'term)
 
 (defgroup shell-pop ()
