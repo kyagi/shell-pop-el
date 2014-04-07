@@ -185,14 +185,24 @@ The input format is the same as that of `kbd'."
        (point))
      eshell-last-input-end)))
 
+(defun shell-pop--cd-to-cwd-shell (cwd)
+  (comint-kill-input)
+  (insert (concat "cd " cwd))
+  (let ((comint-process-echoes t))
+    (comint-send-input))
+  (recenter 0))
+
 (defun shell-pop--cd-to-cwd-term (cwd)
   (term-send-raw-string (concat "cd " cwd "\n"))
   (term-send-raw-string "\C-l"))
 
 (defun shell-pop--cd-to-cwd (cwd)
-  (if (string= shell-pop-internal-mode "eshell")
-      (shell-pop--cd-to-cwd-eshell cwd)
-    (shell-pop--cd-to-cwd-term cwd)))
+  (cond ((string= shell-pop-internal-mode "eshell")
+         (shell-pop--cd-to-cwd-eshell cwd))
+        ((string= shell-pop-internal-mode "shell")
+         (shell-pop--cd-to-cwd-shell cwd))
+        (t
+         (shell-pop--cd-to-cwd-term cwd))))
 
 (defsubst shell-pop--calculate-window-size ()
   (if (string= shell-pop-window-position "bottom")
