@@ -13,7 +13,8 @@ with `package.el`.
 
 ### Manual Install
 
-Make sure to place shell-pop.el somewhere in the load-path and add the following lines to your .emacs file.
+Make sure to place shell-pop.el somewhere in the load-path and add the following lines
+to your init file(`~/.emacs.d/init.el`, `~/.emacs` etc).
 
 ```lisp
 (add-to-list 'load-path "somewhere")
