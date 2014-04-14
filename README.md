@@ -6,7 +6,9 @@ Installation
 ----------
 Make sure to place shell-pop.el somewhere in the load-path and add the following lines to your .emacs file.
 
-    (require 'shell-pop)
+```lisp
+(require 'shell-pop)
+```
 
 Customization
 ----------
@@ -20,17 +22,19 @@ You can get a full frame layout by setting `full` to `shell-pop-window-position`
 
 After saving the customized values, your .emacs file will be like as follows. 
 
-    (custom-set-variables
-     ;; custom-set-variables was added by Custom.
-     ;; If you edit it by hand, you could mess it up, so be careful.
-     ;; Your init file should contain only one such instance.
-     ;; If there is more than one, they won't work right.
-     '(shell-pop-default-directory "/Users/kyagi/git")
-     '(shell-pop-shell-type (quote ("ansi-term" "*ansi-term*" (lambda nil (ansi-term shell-pop-term-shell)))))
-     '(shell-pop-term-shell "/bin/bash")
-     '(shell-pop-universal-key "C-t")
-     '(shell-pop-window-height 30)
-     '(shell-pop-window-position "bottom"))
+```lisp
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(shell-pop-default-directory "/Users/kyagi/git")
+ '(shell-pop-shell-type (quote ("ansi-term" "*ansi-term*" (lambda nil (ansi-term shell-pop-term-shell)))))
+ '(shell-pop-term-shell "/bin/bash")
+ '(shell-pop-universal-key "C-t")
+ '(shell-pop-window-height 30)
+ '(shell-pop-window-position "bottom"))
+ ```
 
 Usage
 ----------
