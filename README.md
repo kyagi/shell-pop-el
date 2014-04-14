@@ -1,17 +1,26 @@
-shell-pop-el
-============
+# shell-pop-el
+
 shell-pop.el helps you to use shell easily on Emacs. Only one key action to work.
 
-Installation
-----------
+## Installation
+
+You can install shell-pop.el from [MELPA](http://melpa.milkbox.net/) and [Marmalade](http://marmalade-repo.org/)
+with `package.el`.
+
+```
+ M-x package-install shell-pop
+```
+
+### Manual Install
+
 Make sure to place shell-pop.el somewhere in the load-path and add the following lines to your .emacs file.
 
 ```lisp
+(add-to-list 'load-path "somewhere")
 (require 'shell-pop)
 ```
 
-Customization
-----------
+## Customization
 
 Use `M-x customize-variable RET shell-pop-shell-type RET` to customize the shell to use.  Four pre-set options are: `shell`, `terminal`, `ansi-term`, and `eshell`.  You can also set your custom shell if you use other configuration.
 
@@ -36,18 +45,18 @@ After saving the customized values, your .emacs file will be like as follows.
  '(shell-pop-window-position "bottom"))
  ```
 
-Usage
-----------
+## Usage
+
 Just hit the hot key you customized for `shell-pop-universal-key`.  
 For example, `C-t` for the above case.  
 
 You can have multiple shell buffers if you run shell-pop with universal-arguments.  
 For example, `C-u 2 C-t`. You can increase the number(`2`, `3`, `4`, ...) as much as you want for different shell buffers.
 
-Screenshot
-----------
+## Screenshot
+
 ![screenshot](https://raw.github.com/kyagi/shell-pop-el/master/screenshot.png)
 
-EmacsWiki (No longer updated)
-----------
+## EmacsWiki (No longer updated)
+
 http://www.emacswiki.org/emacs/ShellPop
