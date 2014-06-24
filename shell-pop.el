@@ -148,6 +148,16 @@ The input format is the same as that of `kbd'."
   :set 'shell-pop--set-universal-key
   :group 'shell-pop)
 
+(defcustom shell-pop-in-hook nil
+  "Hook run when buffer pop-up"
+  :type 'hook
+  :group 'shell-pop)
+
+(defcustom shell-pop-out-hook nil
+  "Hook run when buffer pop-out"
+  :type 'hook
+  :group 'shell-pop)
+
 (defun shell-pop--shell-buffer-name (index)
   (if (string-match "*\\'" shell-pop-internal-mode-buffer)
       (replace-regexp-in-string
@@ -230,6 +240,7 @@ The input format is the same as that of `kbd'."
     (cons index (get-buffer-window bufname))))
 
 (defun shell-pop-up (index)
+  (run-hooks 'shell-pop-up-hook)
   (let ((w (if (listp index)
                (let ((ret (shell-pop-get-unused-internal-mode-buffer-window)))
                  (setq index (car ret))
@@ -257,6 +268,7 @@ The input format is the same as that of `kbd'."
       (shell-pop--cd-to-cwd cwd))))
 
 (defun shell-pop-out ()
+  (run-hooks 'shell-pop-out-hook)
   (if (string= shell-pop-window-position "full")
       (jump-to-register :shell-pop)
     (when (not (= shell-pop-window-height 100))
