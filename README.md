@@ -46,6 +46,15 @@ After saving the customized values, your .emacs file will be like as follows.
  '(shell-pop-window-position "bottom"))
  ```
 
+#### `shell-pop-in-hook`
+
+This hook runs before shell buffer pop-up.
+
+#### `shell-pop-out-hook`
+
+This hook runs before shell buffer pop-out.
+
+
 ## Usage
 
 Just hit the hot key you customized for `shell-pop-universal-key`.
