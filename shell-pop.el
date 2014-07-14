@@ -79,6 +79,11 @@
                             (<= 0 x)))))
   :group 'shell-pop)
 
+(defcustom shell-pop-full-span nil
+  "If non-nil, the shell spans full width of a window"
+  :type 'boolean
+  :group 'shell-pop)
+
 (defcustom shell-pop-window-position "bottom"
   "Position of the popped buffer."
   :type '(choice
@@ -215,9 +220,13 @@ The input format is the same as that of `kbd'."
          (shell-pop--cd-to-cwd-term cwd))))
 
 (defsubst shell-pop--calculate-window-size ()
-  (if (string= shell-pop-window-position "bottom")
-      (round (* (window-height) (/ (- 100 shell-pop-window-height) 100.0)))
-    (round (* (window-height) (/ shell-pop-window-height 100.0)))))
+  (let ((height (if shell-pop-full-span
+                    (window-height (frame-root-window))
+                  (window-height))))
+    (if (or (string= shell-pop-window-position "bottom")
+            shell-pop-full-span)
+        (round (* height (/ (- 100 shell-pop-window-height) 100.0)))
+      (round (* height (/ shell-pop-window-height 100.0))))))
 
 (defun shell-pop--switch-to-shell-buffer (index)
   (let ((bufname (shell-pop--shell-buffer-name index)))
@@ -227,6 +236,11 @@ The input format is the same as that of `kbd'."
       (rename-buffer bufname))
     (setq shell-pop-last-shell-buffer-name bufname
           shell-pop-last-shell-buffer-index index)))
+
+(defun shell-pop--translate-position (pos)
+  (cond
+    ((string= pos "top") 'above)
+    ((string= pos "bottom") 'below)))
 
 (defun shell-pop-get-unused-internal-mode-buffer-window ()
   (let ((finish nil)
@@ -257,9 +271,10 @@ The input format is the same as that of `kbd'."
             shell-pop-last-window (selected-window))
       (when (and (not (= shell-pop-window-height 100))
                  (not (string= shell-pop-window-position "full")))
-        (split-window (selected-window) (shell-pop--calculate-window-size))
-        (when (string= shell-pop-window-position "bottom")
-          (other-window 1)))
+        (let ((new-window (shell-pop-split-window)))
+          (when (or (string= shell-pop-window-position "bottom")
+                    shell-pop-full-span)
+            (select-window new-window))))
       (when (and shell-pop-default-directory (file-directory-p shell-pop-default-directory))
         (cd shell-pop-default-directory))
       (shell-pop--switch-to-shell-buffer index))
@@ -276,6 +291,17 @@ The input format is the same as that of `kbd'."
       (when (string= shell-pop-window-position "bottom")
         (select-window shell-pop-last-window)))
     (switch-to-buffer shell-pop-last-buffer)))
+
+(defun shell-pop-split-window ()
+  (unless (string= shell-pop-window-position "full")
+    (cond
+     (shell-pop-full-span
+      (split-window
+       (frame-root-window) ; window
+       (shell-pop--calculate-window-size) ; size
+       (shell-pop--translate-position shell-pop-window-position))) ; side
+     (t
+      (split-window (selected-window) (shell-pop--calculate-window-size))))))
 
 (provide 'shell-pop)
 
