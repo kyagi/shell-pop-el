@@ -43,8 +43,13 @@ After saving the customized values, your .emacs file will be like as follows.
  '(shell-pop-term-shell "/bin/bash")
  '(shell-pop-universal-key "C-t")
  '(shell-pop-window-height 30)
+ '(shell-pop-full-span t)
  '(shell-pop-window-position "bottom"))
  ```
+
+#### `shell-pop-full-span`
+
+This option allows you to generate the shell window with the same width as the current Emacs frame. It is beneficial when you are always using multiple windows on Emacs. In detail, See https://github.com/kyagi/shell-pop-el/pull/21#issuecomment-48876673
 
 #### `shell-pop-in-hook`
 
