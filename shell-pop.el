@@ -144,6 +144,26 @@ buffer from which the `shell-pop' command was invoked."
              shell-pop-universal-key)
     (define-key term-raw-map (read-kbd-macro value) 'shell-pop)))
 
+
+;;; backward compatible setter custom
+;; extracted from emacs wiki last version, and adapted (keep api, change intern)
+
+(defun shell-pop-set-window-height (number)
+  (interactive "nInput the number for the percentage of \
+selected window height (10-100): ")
+  (setq shell-pop-window-height number))
+
+(defun shell-pop-set-window-position (position)
+  (interactive "sInput the position for shell-pop (top|bottom|full): ")
+  (setq shell-pop-window-position position))
+;; §later: checkying
+
+(defun shell-pop-set-internal-mode-shell (shell)
+  (interactive (list (read-from-minibuffer "Input your favorite shell:"
+                                           shell-pop-term-shell)))
+  (setq shell-pop-term-shell shell))
+
+
 ;;;###autoload
 (defcustom shell-pop-universal-key nil
   "Key binding used to pop in and out of the shell.
