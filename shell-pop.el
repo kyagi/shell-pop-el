@@ -169,24 +169,31 @@ buffer from which the `shell-pop' command was invoked."
 (defun shell-pop-set-window-height (number)
   (interactive "nInput the number for the percentage of \
 selected window height (10-100): ")
-  (setq shell-pop-window-height number))
+  (if  (and (<= number 100) (<= 0 number))
+      (setq shell-pop-window-height number)
+    (message "Height not in range: %d, must be between 0 and 100" number)))
 
 (defun shell-pop-set-window-position (position)
   (interactive "sInput the position for shell-pop (top|bottom|full): ")
-  (setq shell-pop-window-position position))
-;; §later: checkying
+  (if (string-match-p "^\\(top\\|bottom\\|full\\)$" position)
+      (setq shell-pop-window-position position)
+    (message "Invalid positif: acceptables values: top|bottom|full")))
+;; §later: completion?
 
 (defun shell-pop-set-internal-mode-shell (shell)
   (interactive (list (read-from-minibuffer "Input your favorite shell:"
                                            shell-pop-term-shell)))
   (setq shell-pop-term-shell shell))
 
-(defun shell-pop-set-internal-mode (mode)
+(defun shell-pop-change-shell-mode (mode)
   (interactive "sInput your favorite mode (shell|terminal|ansi-term|eshell): ")
   (let  ((shell-mode (shell-pop--get-default-shell-type mode)))
-    (when shell-mode
-     (shell-pop--set-shell-type 'shell-pop-shell-type shell-mode))))
+    (if shell-mode
+     (shell-pop--set-shell-type 'shell-pop-shell-type shell-mode)
+     (message "Shell mode %s does not exist" mode))))
 
+(defalias 'shell-pop-set-internal-mode 'shell-pop-change-shell-mode
+  "Backward compatible alias")
 
 ;;;###autoload
 (defcustom shell-pop-universal-key nil
