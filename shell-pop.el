@@ -97,6 +97,23 @@
   :type 'directory
   :group 'shell-pop)
 
+
+(defconst shell-pop-shell-type-alist
+  ;; name --> mode, buffer, function
+  '(("shell"     . ("shell"     "*shell*"
+		    '(lambda () (shell))))
+    ("terminal"  . ("terminal"  "*terminal*"
+		    '(lambda () (term shell-pop-term-shell))))
+    ("ansi-term" . ("ansi-term" "*ansi-term*"
+		      '(lambda () (ansi-term shell-pop-term-shell))))
+    ("eshell"    . ("eshell"    "*eshell*"
+		    '(lambda () (eshell)))))
+    "Shell default default types alist")
+
+(defun shell-pop--get-default-shell-type (name)
+  "Get one of predefined shell type by NAME"
+  (cdr-safe (assoc name shell-pop-shell-type-alist)))
+
 (defun shell-pop--set-shell-type (symbol value)
   (set-default symbol value)
   (setq shell-pop-internal-mode (nth 0 value)
@@ -106,23 +123,23 @@
              shell-pop-universal-key)
     (define-key term-raw-map (read-kbd-macro shell-pop-universal-key) 'shell-pop)))
 
-(defcustom shell-pop-shell-type '("shell" "*shell*" (lambda () (shell)))
+(defcustom shell-pop-shell-type (shell-pop--get-default-shell-type "shell")
   "Type of shell that is launched when first popping into a shell.
 
 The value is a list with these items:
  - Internal name of the shell type.  This should be unique \"id\".
  - Name of the buffer this shell opens.
  - A function that launches the shell."
-  :type '(choice
+  :type `(choice
           (list :tag "Custom" string string function)
           (const :tag "shell"
-                 ("shell" "*shell*" (lambda () (shell))))
+                 ,(shell-pop--get-default-shell-type "shell"))
           (const :tag "terminal"
-                 ("terminal" "*terminal*" (lambda () (term shell-pop-term-shell))))
+                 ,(shell-pop--get-default-shell-type "terminal"))
           (const :tag "ansi-term"
-                 ("ansi-term" "*ansi-term*" (lambda () (ansi-term shell-pop-term-shell))))
+                 ,(shell-pop--get-default-shell-type "ansi-term"))
           (const :tag "eshell"
-                 ("eshell" "*eshell*" (lambda () (eshell)))))
+                 ,(shell-pop--get-default-shell-type "eshell")))
   :set 'shell-pop--set-shell-type
   :group 'shell-pop)
 
@@ -148,6 +165,7 @@ buffer from which the `shell-pop' command was invoked."
 ;;; backward compatible setter custom
 ;; extracted from emacs wiki last version, and adapted (keep api, change intern)
 
+
 (defun shell-pop-set-window-height (number)
   (interactive "nInput the number for the percentage of \
 selected window height (10-100): ")
@@ -162,6 +180,12 @@ selected window height (10-100): ")
   (interactive (list (read-from-minibuffer "Input your favorite shell:"
                                            shell-pop-term-shell)))
   (setq shell-pop-term-shell shell))
+
+(defun shell-pop-set-internal-mode (mode)
+  (interactive "sInput your favorite mode (shell|terminal|ansi-term|eshell): ")
+  (let  ((shell-mode (shell-pop--get-default-shell-type mode)))
+    (when shell-mode
+     (shell-pop--set-shell-type 'shell-pop-shell-type shell-mode))))
 
 
 ;;;###autoload
