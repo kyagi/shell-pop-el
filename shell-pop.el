@@ -186,7 +186,9 @@ The input format is the same as that of `kbd'."
 (defun shell-pop (arg)
   (interactive "P")
   (if (string= (buffer-name) shell-pop-last-shell-buffer-name)
-      (shell-pop-out)
+      (if (null arg)
+          (shell-pop-out)
+        (shell-pop--switch-to-shell-buffer (prefix-numeric-value arg)))
     (shell-pop-up (or arg shell-pop-last-shell-buffer-index))))
 
 (defun shell-pop--cd-to-cwd-eshell (cwd)
