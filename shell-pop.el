@@ -230,12 +230,30 @@ The input format is the same as that of `kbd'."
         (round (* height (/ (- 100 shell-pop-window-height) 100.0)))
       (round (* height (/ shell-pop-window-height 100.0))))))
 
+(defun shell-pop--kill-and-delete-window ()
+  (unless (one-window-p)
+    (delete-window)))
+
+(defun shell-pop--set-exit-action ()
+  (if (string= shell-pop-internal-mode "eshell")
+      (add-hook 'eshell-exit-hook 'shell-pop--kill-and-delete-window nil t)
+    (let ((process (get-buffer-process (current-buffer))))
+      (when process
+        (set-process-sentinel
+         process
+         (lambda (proc change)
+           (when (string-match "\\(?:finished\\|exited\\)" change)
+             (kill-buffer (process-buffer proc))
+             (unless (one-window-p)
+               (delete-window)))))))))
+
 (defun shell-pop--switch-to-shell-buffer (index)
   (let ((bufname (shell-pop--shell-buffer-name index)))
     (if (get-buffer bufname)
         (switch-to-buffer bufname)
       (funcall (eval shell-pop-internal-mode-func))
-      (rename-buffer bufname))
+      (rename-buffer bufname)
+      (shell-pop--set-exit-action))
     (setq shell-pop-last-shell-buffer-name bufname
           shell-pop-last-shell-buffer-index index)))
 
