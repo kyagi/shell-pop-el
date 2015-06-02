@@ -1,11 +1,11 @@
 ;;; shell-pop.el --- helps you to use shell easily on Emacs. Only one key action to work.
 
-;; Copyright (C) 2009, 2010, 2011, 2012, 2013  Kazuo Yagi
+;; Copyright (C) 2009-2015  Kazuo Yagi
 
 ;; Author:        Kazuo YAGI <kazuo.yagi@gmail.com>
 ;; Maintainer:    Kazuo YAGI <kazuo.yagi@gmail.com>
 ;; URL:           http://github.com/kyagi/shell-pop-el
-;; Version:       0.3
+;; Version:       0.4
 ;; Created:       2009-05-31 23:57:08
 ;; Keywords:      shell, terminal, tools
 ;; Compatibility: GNU Emacs 23.x, 24.x
