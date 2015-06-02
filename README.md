@@ -1,4 +1,4 @@
-# shell-pop-el
+# shell-pop-el [![melpa badge][melpa-badge]][melpa-link] [![melpa stable badge][melpa-stable-badge]][melpa-stable-link]
 
 shell-pop.el helps you to use shell easily on Emacs. Only one key action to work.
 
@@ -75,3 +75,8 @@ For example, `C-u 2 C-t`. You can increase the number(`2`, `3`, `4`, ...) as muc
 ## EmacsWiki (No longer updated)
 
 http://www.emacswiki.org/emacs/ShellPop
+
+[melpa-link]: http://melpa.org/#/shell-pop
+[melpa-stable-link]: http://stable.melpa.org/#/shell-pop
+[melpa-badge]: http://melpa.org/packages/shell-pop-badge.svg
+[melpa-stable-badge]: http://stable.melpa.org/packages/shell-pop-badge.svg
