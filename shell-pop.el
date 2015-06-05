@@ -243,7 +243,8 @@ The input format is the same as that of `kbd'."
          process
          (lambda (proc change)
            (when (string-match "\\(?:finished\\|exited\\)" change)
-             (unless (one-window-p)
+             (if (one-window-p)
+                 (switch-to-buffer shell-pop-last-buffer)
                (delete-window)))))))))
 
 (defun shell-pop--switch-to-shell-buffer (index)
