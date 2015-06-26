@@ -1,4 +1,4 @@
-;;; shell-pop.el --- helps you to use shell easily on Emacs. Only one key action to work.
+;;; shell-pop.el --- helps you to use shell easily on Emacs. Only one key action to work. -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2009-2015  Kazuo Yagi
 
@@ -8,7 +8,8 @@
 ;; Version:       0.4
 ;; Created:       2009-05-31 23:57:08
 ;; Keywords:      shell, terminal, tools
-;; Compatibility: GNU Emacs 23.x, 24.x
+;; Compatibility: GNU 24.x
+;; Package-Requires: ((emacs "24"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
