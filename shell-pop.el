@@ -224,6 +224,9 @@ The input format is the same as that of `kbd'."
         (t
          (shell-pop--cd-to-cwd-term cwd))))
 
+(defsubst shell-pop--full-p ()
+  (string= shell-pop-window-position "full"))
+
 (defsubst shell-pop--split-side-p ()
   (member shell-pop-window-position '("left" "right")))
 
@@ -288,7 +291,7 @@ The input format is the same as that of `kbd'."
                  (cdr ret))
              (shell-pop-get-internal-mode-buffer-window index)))
         (cwd (replace-regexp-in-string "\\\\" "/" default-directory)))
-    (when (string= shell-pop-window-position "full")
+    (when (shell-pop--full-p)
       (window-configuration-to-register :shell-pop)
       (delete-other-windows))
     (if w
@@ -297,7 +300,7 @@ The input format is the same as that of `kbd'."
       (setq shell-pop-last-buffer (buffer-name)
             shell-pop-last-window (selected-window))
       (when (and (not (= shell-pop-window-height 100))
-                 (not (string= shell-pop-window-position "full")))
+                 (not (shell-pop--full-p)))
         (let ((new-window (shell-pop-split-window)))
           (select-window new-window)))
       (when (and shell-pop-default-directory (file-directory-p shell-pop-default-directory))
@@ -309,7 +312,7 @@ The input format is the same as that of `kbd'."
 
 (defun shell-pop-out ()
   (run-hooks 'shell-pop-out-hook)
-  (if (string= shell-pop-window-position "full")
+  (if (shell-pop--full-p)
       (jump-to-register :shell-pop)
     (when (and (not (one-window-p)) (not (= shell-pop-window-height 100)))
       (delete-window)
@@ -317,7 +320,7 @@ The input format is the same as that of `kbd'."
     (switch-to-buffer shell-pop-last-buffer)))
 
 (defun shell-pop-split-window ()
-  (unless (string= shell-pop-window-position "full")
+  (unless (shell-pop--full-p)
     (cond
      (shell-pop-full-span
       (split-window
