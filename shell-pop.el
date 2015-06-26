@@ -70,14 +70,15 @@
 (defvar shell-pop-last-shell-buffer-name "")
 ;; internal}
 
-(defcustom shell-pop-window-height 30
-  "Percentage for shell-buffer window height."
+(defcustom shell-pop-window-size 30
+  "Percentage for shell-buffer window size."
   :type '(restricted-sexp
           :match-alternatives
           ((lambda (x) (and (integerp x)
                             (<= x 100)
                             (<= 0 x)))))
   :group 'shell-pop)
+(defvaralias 'shell-pop-window-height 'shell-pop-window-size)
 
 (defcustom shell-pop-full-span nil
   "If non-nil, the shell spans full width of a window"
@@ -89,6 +90,8 @@
   :type '(choice
           (const "top")
           (const "bottom")
+          (const "left")
+          (const "right")
           (const "full"))
   :group 'shell-pop)
 
@@ -221,14 +224,16 @@ The input format is the same as that of `kbd'."
         (t
          (shell-pop--cd-to-cwd-term cwd))))
 
-(defsubst shell-pop--calculate-window-size ()
-  (let ((height (if shell-pop-full-span
-                    (window-height (frame-root-window))
-                  (window-height))))
-    (if (or (string= shell-pop-window-position "bottom")
-            shell-pop-full-span)
-        (round (* height (/ (- 100 shell-pop-window-height) 100.0)))
-      (round (* height (/ shell-pop-window-height 100.0))))))
+(defsubst shell-pop--split-side-p ()
+  (member shell-pop-window-position '("left" "right")))
+
+(defun shell-pop--calculate-window-size ()
+  (let* ((side-p (shell-pop--split-side-p))
+         (win (and shell-pop-full-span (frame-root-window)))
+         (size (if (shell-pop--split-side-p)
+                   (window-width)
+                 (window-height win))))
+    (round (* size (/ (- 100 shell-pop-window-height) 100.0)))))
 
 (defun shell-pop--kill-and-delete-window ()
   (unless (one-window-p)
@@ -260,7 +265,9 @@ The input format is the same as that of `kbd'."
 (defun shell-pop--translate-position (pos)
   (cond
     ((string= pos "top") 'above)
-    ((string= pos "bottom") 'below)))
+    ((string= pos "bottom") 'below)
+    ((string= pos "left") 'left)
+    ((string= pos "right") 'right)))
 
 (defun shell-pop-get-unused-internal-mode-buffer-window ()
   (let ((finish nil)
@@ -292,9 +299,7 @@ The input format is the same as that of `kbd'."
       (when (and (not (= shell-pop-window-height 100))
                  (not (string= shell-pop-window-position "full")))
         (let ((new-window (shell-pop-split-window)))
-          (when (or (string= shell-pop-window-position "bottom")
-                    shell-pop-full-span)
-            (select-window new-window))))
+          (select-window new-window)))
       (when (and shell-pop-default-directory (file-directory-p shell-pop-default-directory))
         (cd shell-pop-default-directory))
       (shell-pop--switch-to-shell-buffer index))
@@ -308,8 +313,7 @@ The input format is the same as that of `kbd'."
       (jump-to-register :shell-pop)
     (when (and (not (one-window-p)) (not (= shell-pop-window-height 100)))
       (delete-window)
-      (when (string= shell-pop-window-position "bottom")
-        (select-window shell-pop-last-window)))
+      (select-window shell-pop-last-window))
     (switch-to-buffer shell-pop-last-buffer)))
 
 (defun shell-pop-split-window ()
@@ -321,7 +325,8 @@ The input format is the same as that of `kbd'."
        (shell-pop--calculate-window-size) ; size
        (shell-pop--translate-position shell-pop-window-position))) ; side
      (t
-      (split-window (selected-window) (shell-pop--calculate-window-size))))))
+      (split-window (selected-window) (shell-pop--calculate-window-size)
+                    (shell-pop--translate-position shell-pop-window-position))))))
 
 (provide 'shell-pop)
 

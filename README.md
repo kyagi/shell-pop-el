@@ -42,7 +42,7 @@ After saving the customized values, your .emacs file will be like as follows.
  '(shell-pop-shell-type (quote ("ansi-term" "*ansi-term*" (lambda nil (ansi-term shell-pop-term-shell)))))
  '(shell-pop-term-shell "/bin/bash")
  '(shell-pop-universal-key "C-t")
- '(shell-pop-window-height 30)
+ '(shell-pop-window-size 30)
  '(shell-pop-full-span t)
  '(shell-pop-window-position "bottom"))
  ```
