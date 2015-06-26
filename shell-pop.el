@@ -232,8 +232,7 @@ The input format is the same as that of `kbd'."
   (member shell-pop-window-position '("left" "right")))
 
 (defun shell-pop--calculate-window-size ()
-  (let* ((side-p (shell-pop--split-side-p))
-         (win (and shell-pop-full-span (frame-root-window)))
+  (let* ((win (and shell-pop-full-span (frame-root-window)))
          (size (if (shell-pop--split-side-p)
                    (window-width)
                  (window-height win))))
@@ -250,7 +249,7 @@ The input format is the same as that of `kbd'."
       (when process
         (set-process-sentinel
          process
-         (lambda (proc change)
+         (lambda (_proc change)
            (when (string-match-p "\\(?:finished\\|exited\\)" change)
              (if (one-window-p)
                  (switch-to-buffer shell-pop-last-buffer)
