@@ -47,6 +47,17 @@ After saving the customized values, your .emacs file will be like as follows.
  '(shell-pop-window-position "bottom"))
  ```
 
+#### `shell-pop-window-position`(Default: "bottom")
+
+Position of popup window. You can choose `"bottom"`, `"top"`, `"right"`, `"left"` and `"full"`.
+Use entire frame when this value is `"full"`.
+
+
+#### `shell-pop-window-size`(Default: `30`)
+
+Percentage for shell-buffer window size.
+
+
 #### `shell-pop-full-span`
 
 This option allows you to generate the shell window with the same width as the current Emacs frame. It is beneficial when you are always using multiple windows on Emacs. In detail, see https://github.com/kyagi/shell-pop-el/pull/21#issuecomment-48876673
