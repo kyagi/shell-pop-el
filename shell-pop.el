@@ -167,7 +167,7 @@ The input format is the same as that of `kbd'."
   :group 'shell-pop)
 
 (defun shell-pop--shell-buffer-name (index)
-  (if (string-match "*\\'" shell-pop-internal-mode-buffer)
+  (if (string-match-p "*\\'" shell-pop-internal-mode-buffer)
       (replace-regexp-in-string
        "*\\'" (format "-%d*" index) shell-pop-internal-mode-buffer)
     (format "%s-%d" shell-pop-internal-mode-buffer index)))
@@ -250,7 +250,7 @@ The input format is the same as that of `kbd'."
         (set-process-sentinel
          process
          (lambda (proc change)
-           (when (string-match "\\(?:finished\\|exited\\)" change)
+           (when (string-match-p "\\(?:finished\\|exited\\)" change)
              (if (one-window-p)
                  (switch-to-buffer shell-pop-last-buffer)
                (delete-window)))))))))
