@@ -1,4 +1,4 @@
-;;; shell-pop.el --- helps you to use shell easily on Emacs. Only one key action to work.
+;;; shell-pop.el --- helps you to use shell easily on Emacs. Only one key action to work. -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2009-2015  Kazuo Yagi
 
@@ -8,7 +8,8 @@
 ;; Version:       0.4
 ;; Created:       2009-05-31 23:57:08
 ;; Keywords:      shell, terminal, tools
-;; Compatibility: GNU Emacs 23.x, 24.x
+;; Compatibility: GNU 24.x
+;; Package-Requires: ((emacs "24"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -167,7 +168,7 @@ The input format is the same as that of `kbd'."
   :group 'shell-pop)
 
 (defun shell-pop--shell-buffer-name (index)
-  (if (string-match "*\\'" shell-pop-internal-mode-buffer)
+  (if (string-match-p "*\\'" shell-pop-internal-mode-buffer)
       (replace-regexp-in-string
        "*\\'" (format "-%d*" index) shell-pop-internal-mode-buffer)
     (format "%s-%d" shell-pop-internal-mode-buffer index)))
@@ -224,12 +225,14 @@ The input format is the same as that of `kbd'."
         (t
          (shell-pop--cd-to-cwd-term cwd))))
 
+(defsubst shell-pop--full-p ()
+  (string= shell-pop-window-position "full"))
+
 (defsubst shell-pop--split-side-p ()
   (member shell-pop-window-position '("left" "right")))
 
 (defun shell-pop--calculate-window-size ()
-  (let* ((side-p (shell-pop--split-side-p))
-         (win (and shell-pop-full-span (frame-root-window)))
+  (let* ((win (and shell-pop-full-span (frame-root-window)))
          (size (if (shell-pop--split-side-p)
                    (window-width)
                  (window-height win))))
@@ -246,8 +249,8 @@ The input format is the same as that of `kbd'."
       (when process
         (set-process-sentinel
          process
-         (lambda (proc change)
-           (when (string-match "\\(?:finished\\|exited\\)" change)
+         (lambda (_proc change)
+           (when (string-match-p "\\(?:finished\\|exited\\)" change)
              (if (one-window-p)
                  (switch-to-buffer shell-pop-last-buffer)
                (delete-window)))))))))
@@ -288,7 +291,7 @@ The input format is the same as that of `kbd'."
                  (cdr ret))
              (shell-pop-get-internal-mode-buffer-window index)))
         (cwd (replace-regexp-in-string "\\\\" "/" default-directory)))
-    (when (string= shell-pop-window-position "full")
+    (when (shell-pop--full-p)
       (window-configuration-to-register :shell-pop)
       (delete-other-windows))
     (if w
@@ -297,7 +300,7 @@ The input format is the same as that of `kbd'."
       (setq shell-pop-last-buffer (buffer-name)
             shell-pop-last-window (selected-window))
       (when (and (not (= shell-pop-window-height 100))
-                 (not (string= shell-pop-window-position "full")))
+                 (not (shell-pop--full-p)))
         (let ((new-window (shell-pop-split-window)))
           (select-window new-window)))
       (when (and shell-pop-default-directory (file-directory-p shell-pop-default-directory))
@@ -309,7 +312,7 @@ The input format is the same as that of `kbd'."
 
 (defun shell-pop-out ()
   (run-hooks 'shell-pop-out-hook)
-  (if (string= shell-pop-window-position "full")
+  (if (shell-pop--full-p)
       (jump-to-register :shell-pop)
     (when (and (not (one-window-p)) (not (= shell-pop-window-height 100)))
       (delete-window)
@@ -317,7 +320,7 @@ The input format is the same as that of `kbd'."
     (switch-to-buffer shell-pop-last-buffer)))
 
 (defun shell-pop-split-window ()
-  (unless (string= shell-pop-window-position "full")
+  (unless (shell-pop--full-p)
     (cond
      (shell-pop-full-span
       (split-window
