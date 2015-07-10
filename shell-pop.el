@@ -196,15 +196,10 @@ The input format is the same as that of `kbd'."
     (shell-pop-up (or arg shell-pop-last-shell-buffer-index))))
 
 (defun shell-pop--cd-to-cwd-eshell (cwd)
-  (insert (concat "cd " cwd))
-  (eshell-send-input)
-  (let ((inhibit-read-only t))
-    (delete-region
-     (save-excursion
-       (goto-char eshell-last-input-start)
-       (beginning-of-line)
-       (point))
-     eshell-last-input-end)))
+  (if (eshell-process-interact 'process-live-p)
+      (message "Won't change CWD because of running process.")
+    (setq-local default-directory cwd)
+    (eshell-reset)))
 
 (defun shell-pop--cd-to-cwd-shell (cwd)
   (comint-kill-input)
