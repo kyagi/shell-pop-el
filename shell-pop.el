@@ -54,6 +54,8 @@
   (defvar eshell-last-input-end))
 
 (declare-function eshell-send-input "esh-mode")
+(declare-function eshell-reset "esh-mode")
+(declare-function eshell-process-interact "esh-proc")
 
 (require 'term)
 
@@ -198,7 +200,7 @@ The input format is the same as that of `kbd'."
 (defun shell-pop--cd-to-cwd-eshell (cwd)
   (if (eshell-process-interact 'process-live-p)
       (message "Won't change CWD because of running process.")
-    (setq-local default-directory cwd)
+    (setq default-directory cwd)
     (eshell-reset)))
 
 (defun shell-pop--cd-to-cwd-shell (cwd)
