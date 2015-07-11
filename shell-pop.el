@@ -198,7 +198,7 @@ The input format is the same as that of `kbd'."
 (defun shell-pop--cd-to-cwd-eshell (cwd)
   (if (eshell-process-interact 'process-live-p)
       (message "Won't change CWD because of running process.")
-    (setq-local default-directory cwd)
+    (setq default-directory cwd)
     (eshell-reset)))
 
 (defun shell-pop--cd-to-cwd-shell (cwd)
