@@ -54,6 +54,8 @@
   (defvar eshell-last-input-end))
 
 (declare-function eshell-send-input "esh-mode")
+(declare-function eshell-reset "esh-mode")
+(declare-function eshell-process-interact "esh-proc")
 
 (require 'term)
 
