@@ -205,13 +205,13 @@ The input format is the same as that of `kbd'."
 
 (defun shell-pop--cd-to-cwd-shell (cwd)
   (comint-kill-input)
-  (insert (concat "cd " cwd))
+  (insert (concat "cd '" cwd "'"))
   (let ((comint-process-echoes t))
     (comint-send-input))
   (recenter 0))
 
 (defun shell-pop--cd-to-cwd-term (cwd)
-  (term-send-raw-string (concat "cd " cwd "\n"))
+  (term-send-raw-string (concat "cd '" cwd "'\n"))
   (term-send-raw-string "\C-l"))
 
 (defun shell-pop--cd-to-cwd (cwd)
