@@ -204,6 +204,7 @@ The input format is the same as that of `kbd'."
     (eshell-reset)))
 
 (defun shell-pop--cd-to-cwd-shell (cwd)
+  (end-of-buffer)
   (comint-kill-input)
   (insert (concat "cd " (shell-quote-argument cwd)))
   (let ((comint-process-echoes t))
