@@ -216,12 +216,13 @@ The input format is the same as that of `kbd'."
   (term-send-raw-string "\C-l"))
 
 (defun shell-pop--cd-to-cwd (cwd)
-  (cond ((string= shell-pop-internal-mode "eshell")
-         (shell-pop--cd-to-cwd-eshell cwd))
-        ((string= shell-pop-internal-mode "shell")
-         (shell-pop--cd-to-cwd-shell cwd))
-        (t
-         (shell-pop--cd-to-cwd-term cwd))))
+  (let ((abspath (expand-file-name cwd)))
+    (cond ((string= shell-pop-internal-mode "eshell")
+           (shell-pop--cd-to-cwd-eshell abspath))
+          ((string= shell-pop-internal-mode "shell")
+           (shell-pop--cd-to-cwd-shell abspath))
+          (t
+           (shell-pop--cd-to-cwd-term abspath)))))
 
 (defsubst shell-pop--full-p ()
   (string= shell-pop-window-position "full"))
