@@ -40,8 +40,8 @@
 ;; custom shell if you use other configuration.
 
 ;; For `terminal' and `ansi-term' options, you can set the underlying
-;; shell by customizing `shell-pop-term-shell'.  By default, `/bin/bash'
-;; is used, but you can also use `/bin/tcsh', `/bin/zsh' or others.
+;; shell by customizing `shell-pop-term-shell'.  By default, 
+;; `shell-file-name' is used.
 ;;
 ;; Use M-x customize-group RET shell-pop RET to set further options
 ;; such as hotkey, window height and position.
@@ -132,7 +132,7 @@ The value is a list with these items:
   :set 'shell-pop--set-shell-type
   :group 'shell-pop)
 
-(defcustom shell-pop-term-shell "/bin/bash"
+(defcustom shell-pop-term-shell shell-file-name
   "Shell used in `term' and `ansi-term'."
   :type 'string
   :group 'shell-pop)
