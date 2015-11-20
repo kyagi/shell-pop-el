@@ -40,7 +40,7 @@
 ;; custom shell if you use other configuration.
 
 ;; For `terminal' and `ansi-term' options, you can set the underlying
-;; shell by customizing `shell-pop-term-shell'.  By default, 
+;; shell by customizing `shell-pop-term-shell'.  By default,
 ;; `shell-file-name' is used.
 ;;
 ;; Use M-x customize-group RET shell-pop RET to set further options
@@ -160,12 +160,17 @@ The input format is the same as that of `kbd'."
   :group 'shell-pop)
 
 (defcustom shell-pop-in-hook nil
-  "Hook run when buffer pop-up"
+  "Hook run before buffer pop-up."
+  :type 'hook
+  :group 'shell-pop)
+
+(defcustom shell-pop-in-after-hook nil
+  "Hook run after buffer pop-up."
   :type 'hook
   :group 'shell-pop)
 
 (defcustom shell-pop-out-hook nil
-  "Hook run when buffer pop-out"
+  "Hook run before buffer pop-out"
   :type 'hook
   :group 'shell-pop)
 
@@ -283,7 +288,7 @@ The input format is the same as that of `kbd'."
     (cons index (get-buffer-window bufname))))
 
 (defun shell-pop-up (index)
-  (run-hooks 'shell-pop-up-hook)
+  (run-hooks 'shell-pop-in-hook)
   (let ((w (if (listp index)
                (let ((ret (shell-pop-get-unused-internal-mode-buffer-window)))
                  (setq index (car ret))
@@ -307,7 +312,8 @@ The input format is the same as that of `kbd'."
       (shell-pop--switch-to-shell-buffer index))
     (when (and shell-pop-autocd-to-working-dir
                (not (string= cwd default-directory)))
-      (shell-pop--cd-to-cwd cwd))))
+      (shell-pop--cd-to-cwd cwd))
+    (run-hooks 'shell-pop-in-after-hook)))
 
 (defun shell-pop-out ()
   (run-hooks 'shell-pop-out-hook)
