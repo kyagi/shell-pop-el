@@ -40,7 +40,7 @@
 ;; custom shell if you use other configuration.
 
 ;; For `terminal' and `ansi-term' options, you can set the underlying
-;; shell by customizing `shell-pop-term-shell'.  By default, 
+;; shell by customizing `shell-pop-term-shell'.  By default,
 ;; `shell-file-name' is used.
 ;;
 ;; Use M-x customize-group RET shell-pop RET to set further options
