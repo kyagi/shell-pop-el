@@ -283,7 +283,7 @@ The input format is the same as that of `kbd'."
     (cons index (get-buffer-window bufname))))
 
 (defun shell-pop-up (index)
-  (run-hooks 'shell-pop-up-hook)
+  (run-hooks 'shell-pop-in-hook)
   (let ((w (if (listp index)
                (let ((ret (shell-pop-get-unused-internal-mode-buffer-window)))
                  (setq index (car ret))
