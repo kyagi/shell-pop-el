@@ -160,12 +160,17 @@ The input format is the same as that of `kbd'."
   :group 'shell-pop)
 
 (defcustom shell-pop-in-hook nil
-  "Hook run when buffer pop-up"
+  "Hook run before buffer pop-up."
+  :type 'hook
+  :group 'shell-pop)
+
+(defcustom shell-pop-in-after-hook nil
+  "Hook run after buffer pop-up."
   :type 'hook
   :group 'shell-pop)
 
 (defcustom shell-pop-out-hook nil
-  "Hook run when buffer pop-out"
+  "Hook run before buffer pop-out"
   :type 'hook
   :group 'shell-pop)
 
@@ -307,7 +312,8 @@ The input format is the same as that of `kbd'."
       (shell-pop--switch-to-shell-buffer index))
     (when (and shell-pop-autocd-to-working-dir
                (not (string= cwd default-directory)))
-      (shell-pop--cd-to-cwd cwd))))
+      (shell-pop--cd-to-cwd cwd))
+    (run-hooks 'shell-pop-in-after-hook)))
 
 (defun shell-pop-out ()
   (run-hooks 'shell-pop-out-hook)
