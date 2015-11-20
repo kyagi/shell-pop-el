@@ -159,7 +159,7 @@ The input format is the same as that of `kbd'."
   :set 'shell-pop--set-universal-key
   :group 'shell-pop)
 
-(defcustom shell-pop-in-hook nil
+(defcustom shell-pop-up-hook nil
   "Hook run when buffer pop-up"
   :type 'hook
   :group 'shell-pop)
@@ -266,10 +266,10 @@ The input format is the same as that of `kbd'."
 
 (defun shell-pop--translate-position (pos)
   (cond
-    ((string= pos "top") 'above)
-    ((string= pos "bottom") 'below)
-    ((string= pos "left") 'left)
-    ((string= pos "right") 'right)))
+   ((string= pos "top") 'above)
+   ((string= pos "bottom") 'below)
+   ((string= pos "left") 'left)
+   ((string= pos "right") 'right)))
 
 (defun shell-pop-get-unused-internal-mode-buffer-window ()
   (let ((finish nil)
@@ -283,7 +283,6 @@ The input format is the same as that of `kbd'."
     (cons index (get-buffer-window bufname))))
 
 (defun shell-pop-up (index)
-  (run-hooks 'shell-pop-up-hook)
   (let ((w (if (listp index)
                (let ((ret (shell-pop-get-unused-internal-mode-buffer-window)))
                  (setq index (car ret))
@@ -307,16 +306,17 @@ The input format is the same as that of `kbd'."
       (shell-pop--switch-to-shell-buffer index))
     (when (and shell-pop-autocd-to-working-dir
                (not (string= cwd default-directory)))
-      (shell-pop--cd-to-cwd cwd))))
+      (shell-pop--cd-to-cwd cwd)))
+  (run-hooks 'shell-pop-up-hook))
 
 (defun shell-pop-out ()
-  (run-hooks 'shell-pop-out-hook)
   (if (shell-pop--full-p)
       (jump-to-register :shell-pop)
     (when (and (not (one-window-p)) (not (= shell-pop-window-height 100)))
       (delete-window)
       (select-window shell-pop-last-window))
-    (switch-to-buffer shell-pop-last-buffer)))
+    (switch-to-buffer shell-pop-last-buffer))
+  (run-hooks 'shell-pop-out-hook))
 
 (defun shell-pop-split-window ()
   (unless (shell-pop--full-p)
