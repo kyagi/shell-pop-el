@@ -66,6 +66,10 @@ This option allows you to generate the shell window with the same width as the c
 
 This hook runs before shell buffer pop-up.
 
+#### `shell-pop-in-after-hook`
+
+This hook runs after shell buffer pop-up.
+
 #### `shell-pop-out-hook`
 
 This hook runs before shell buffer pop-out.
