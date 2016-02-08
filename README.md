@@ -4,7 +4,7 @@ shell-pop.el helps you to use shell easily on Emacs. Only one key action to work
 
 ## Installation
 
-You can install shell-pop.el from [MELPA](http://melpa.milkbox.net/) and [Marmalade](http://marmalade-repo.org/)
+You can install shell-pop.el from [MELPA](https://melpa.org/) and [Marmalade](https://marmalade-repo.org/)
 with `package.el`.
 
 ```
