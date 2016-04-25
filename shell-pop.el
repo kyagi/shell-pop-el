@@ -143,6 +143,13 @@ buffer from which the `shell-pop' command was invoked."
   :type 'boolean
   :group 'shell-pop)
 
+(defcustom shell-pop-restore-window-configuration t
+  "If non-nil, restore the original window configuration when
+shell-pop is closed.
+
+shell-pop's window is deleted in any case. This variable has no
+effect when `shell-pop-window-position' value is \"full\".")
+
 (defun shell-pop--set-universal-key (symbol value)
   (set-default symbol value)
   (when value (global-set-key (read-kbd-macro value) 'shell-pop))
@@ -322,7 +329,8 @@ The input format is the same as that of `kbd'."
     (when (and (not (one-window-p)) (not (= shell-pop-window-height 100)))
       (delete-window)
       (select-window shell-pop-last-window))
-    (switch-to-buffer shell-pop-last-buffer)))
+    (when shell-pop-restore-window-configuration
+      (switch-to-buffer shell-pop-last-buffer))))
 
 (defun shell-pop-split-window ()
   (unless (shell-pop--full-p)
