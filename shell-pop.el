@@ -148,7 +148,9 @@ buffer from which the `shell-pop' command was invoked."
 shell-pop is closed.
 
 shell-pop's window is deleted in any case. This variable has no
-effect when `shell-pop-window-position' value is \"full\".")
+effect when `shell-pop-window-position' value is \"full\"."
+  :type 'boolean
+  :group 'shell-pop)
 
 (defun shell-pop--set-universal-key (symbol value)
   (set-default symbol value)
