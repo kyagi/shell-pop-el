@@ -329,6 +329,7 @@ The input format is the same as that of `kbd'."
   (if (shell-pop--full-p)
       (jump-to-register :shell-pop)
     (when (and (not (one-window-p)) (not (= shell-pop-window-height 100)))
+      (bury-buffer)
       (delete-window)
       (select-window shell-pop-last-window))
     (when shell-pop-restore-window-configuration
