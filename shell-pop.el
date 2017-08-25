@@ -259,7 +259,7 @@ The input format is the same as that of `kbd'."
 
 (defun shell-pop--set-exit-action ()
   (if (string= shell-pop-internal-mode "eshell")
-      (add-hook 'eshell-exit-hook 'shell-pop--kill-and-delete-window nil t)
+      (add-hook 'eshell-exit-hook 'shell-pop--kill-and-delete-window t t)
     (let ((process (get-buffer-process (current-buffer))))
       (when process
         (set-process-sentinel
