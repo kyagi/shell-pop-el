@@ -74,6 +74,10 @@ This hook runs after shell buffer pop-up.
 
 This hook runs before shell buffer pop-out.
 
+#### `shell-pop-process-exit-hook`
+
+This hook runs when the shell's process exits.
+
 
 ## Usage
 

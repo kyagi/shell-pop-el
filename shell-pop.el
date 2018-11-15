@@ -185,6 +185,11 @@ The input format is the same as that of `kbd'."
   :type 'hook
   :group 'shell-pop)
 
+(defcustom shell-pop-process-exit-hook nil
+  "Hook run when the shell's process exits."
+  :type 'hook
+  :group 'shell-pop)
+
 (defun shell-pop--shell-buffer-name (index)
   (if (string-match-p "*\\'" shell-pop-internal-mode-buffer)
       (replace-regexp-in-string
@@ -266,6 +271,7 @@ The input format is the same as that of `kbd'."
          process
          (lambda (_proc change)
            (when (string-match-p "\\(?:finished\\|exited\\)" change)
+             (run-hooks 'shell-pop-process-exit-hook)
              (if (one-window-p)
                  (switch-to-buffer shell-pop-last-buffer)
                (delete-window)))))))))
