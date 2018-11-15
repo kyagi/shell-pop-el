@@ -154,6 +154,9 @@ effect when `shell-pop-window-position' value is \"full\"."
   :type 'boolean
   :group 'shell-pop)
 
+(defcustom shell-pop-cleanup-buffer-at-process-exit t
+  "If non-nil, cleanup the shell's buffer after its process exits.")
+
 (defun shell-pop--set-universal-key (symbol value)
   (set-default symbol value)
   (when value (global-set-key (read-kbd-macro value) 'shell-pop))
@@ -272,6 +275,8 @@ The input format is the same as that of `kbd'."
          (lambda (_proc change)
            (when (string-match-p "\\(?:finished\\|exited\\)" change)
              (run-hooks 'shell-pop-process-exit-hook)
+             (when shell-pop-cleanup-buffer-at-process-exit
+               (kill-buffer))
              (if (one-window-p)
                  (switch-to-buffer shell-pop-last-buffer)
                (delete-window)))))))))
