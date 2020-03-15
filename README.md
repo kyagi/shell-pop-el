@@ -44,7 +44,10 @@ After saving the customized values, your .emacs file will be like as follows.
  '(shell-pop-universal-key "C-t")
  '(shell-pop-window-size 30)
  '(shell-pop-full-span t)
- '(shell-pop-window-position "bottom"))
+ '(shell-pop-window-position "bottom")
+ '(shell-pop-autocd-to-working-dir t)
+ '(shell-pop-restore-window-configuration t)
+ '(shell-pop-cleanup-buffer-at-process-exit t))
  ```
 
 #### `shell-pop-window-position`(Default: "bottom")
@@ -73,6 +76,10 @@ This hook runs after shell buffer pop-up.
 #### `shell-pop-out-hook`
 
 This hook runs before shell buffer pop-out.
+
+#### `shell-pop-process-exit-hook`
+
+This hook runs when the shell's process exits.
 
 
 ## Usage
