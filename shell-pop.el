@@ -155,7 +155,9 @@ effect when `shell-pop-window-position' value is \"full\"."
   :group 'shell-pop)
 
 (defcustom shell-pop-cleanup-buffer-at-process-exit t
-  "If non-nil, cleanup the shell's buffer after its process exits.")
+  "If non-nil, cleanup the shell's buffer after its process exits."
+  :type 'boolean
+  :group 'shell-pop)
 
 (defun shell-pop--set-universal-key (symbol value)
   (set-default symbol value)
