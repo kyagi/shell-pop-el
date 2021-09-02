@@ -65,9 +65,9 @@
   :group 'shell)
 
 ;; internal{
-(defvar shell-pop-internal-mode "shell")
-(defvar shell-pop-internal-mode-buffer "*shell*")
-(defvar shell-pop-internal-mode-func '(lambda () (shell)))
+(defvar shell-pop-internal-mode)
+(defvar shell-pop-internal-mode-buffer)
+(defvar shell-pop-internal-mode-func)
 (defvar shell-pop-last-buffer nil)
 (defvar shell-pop-last-window nil)
 (defvar shell-pop-last-shell-buffer-index 1)
