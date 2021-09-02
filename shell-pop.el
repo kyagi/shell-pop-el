@@ -115,7 +115,7 @@
              shell-pop-universal-key)
     (define-key term-raw-map (read-kbd-macro shell-pop-universal-key) 'shell-pop)))
 
-(defcustom shell-pop-shell-type '("shell" "*shell*" (lambda () (shell)))
+(defcustom shell-pop-shell-type '("shell" "*shell*" (lambda (buf) (shell buf)))
   "Type of shell that is launched when first popping into a shell.
 
 The value is a list with these items:
@@ -125,7 +125,7 @@ The value is a list with these items:
   :type '(choice
           (list :tag "Custom" string string function)
           (const :tag "shell"
-                 ("shell" "*shell*" (lambda () (shell))))
+                 ("shell" "*shell*" (lambda (buf) (shell buf))))
           (const :tag "terminal"
                  ("terminal" "*terminal*" (lambda () (term shell-pop-term-shell))))
           (const :tag "ansi-term"
@@ -288,8 +288,14 @@ The input format is the same as that of `kbd'."
   (let ((bufname (shell-pop--shell-buffer-name index)))
     (if (get-buffer bufname)
         (switch-to-buffer bufname)
-      (funcall (eval shell-pop-internal-mode-func))
-      (rename-buffer bufname)
+      (cond
+       ((string= shell-pop-internal-mode "shell")
+        (get-buffer-create bufname)
+        (switch-to-buffer bufname)
+        (funcall (eval shell-pop-internal-mode-func) bufname))
+       (t
+        (funcall (eval shell-pop-internal-mode-func))
+        (rename-buffer bufname)))
       (shell-pop--set-exit-action))
     (setq shell-pop-last-shell-buffer-name bufname
           shell-pop-last-shell-buffer-index index)))
