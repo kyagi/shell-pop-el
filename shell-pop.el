@@ -85,10 +85,9 @@
                             (<= x 100)
                             (<= 0 x)))))
   :group 'shell-pop)
-(defvaralias 'shell-pop-window-height 'shell-pop-window-size)
 
 (defcustom shell-pop-full-span nil
-  "If non-nil, the shell spans full width of a window"
+  "If non-nil, the shell spans full width of a window."
   :type 'boolean
   :group 'shell-pop)
 
@@ -151,7 +150,7 @@ buffer from which the `shell-pop' command was invoked."
   "If non-nil, restore the original window configuration when
 shell-pop is closed.
 
-shell-pop's window is deleted in any case. This variable has no
+shell-pop's window is deleted in any case.  This variable has no
 effect when `shell-pop-window-position' value is \"full\"."
   :type 'boolean
   :group 'shell-pop)
@@ -188,7 +187,7 @@ The input format is the same as that of `kbd'."
   :group 'shell-pop)
 
 (defcustom shell-pop-out-hook nil
-  "Hook run before buffer pop-out"
+  "Hook run before buffer pop-out."
   :type 'hook
   :group 'shell-pop)
 
