@@ -134,7 +134,9 @@ The value is a list with these items:
   :set 'shell-pop--set-shell-type
   :group 'shell-pop)
 
-(defcustom shell-pop-term-shell shell-file-name
+(defcustom shell-pop-term-shell (or explicit-shell-file-name
+                                    (getenv "ESHELL")
+                                    shell-file-name)
   "Shell used in `term' and `ansi-term'."
   :type 'string
   :group 'shell-pop)
