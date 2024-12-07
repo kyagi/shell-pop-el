@@ -362,7 +362,7 @@ The input format is the same as that of `kbd'."
     (cond
      (shell-pop-full-span
       (split-window
-       (frame-root-window) ; window
+       (window-main-window) ; window
        (shell-pop--calculate-window-size) ; size
        (shell-pop--translate-position shell-pop-window-position))) ; side
      (t
