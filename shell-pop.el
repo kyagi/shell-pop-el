@@ -9,7 +9,7 @@
 ;; Created:       2009-05-31 23:57:08
 ;; Keywords:      shell, terminal, tools
 ;; Compatibility: GNU 24.x
-;; Package-Requires: ((emacs "24.1") (cl-lib "0.5"))
+;; Package-Requires: ((emacs "26.1"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -362,7 +362,7 @@ The input format is the same as that of `kbd'."
     (cond
      (shell-pop-full-span
       (split-window
-       (frame-root-window) ; window
+       (window-main-window) ; window
        (shell-pop--calculate-window-size) ; size
        (shell-pop--translate-position shell-pop-window-position))) ; side
      (t
