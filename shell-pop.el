@@ -266,7 +266,7 @@ The input format is the same as that of `kbd'."
     (round (* size (/ (- 100 shell-pop-window-height) 100.0)))))
 
 (defun shell-pop--kill-and-delete-window ()
-  (unless (one-window-p)
+  (when (window-deletable-p)
     (delete-window)))
 
 (defun shell-pop--set-exit-action ()
@@ -276,14 +276,33 @@ The input format is the same as that of `kbd'."
       (when process
         (set-process-sentinel
          process
-         (lambda (_proc change)
+         (lambda (proc change)
            (when (string-match-p "\\(?:finished\\|exited\\)" change)
              (run-hooks 'shell-pop-process-exit-hook)
-             (when shell-pop-cleanup-buffer-at-process-exit
-               (kill-buffer))
-             (if (one-window-p)
-                 (switch-to-buffer shell-pop-last-buffer)
-               (delete-window)))))))))
+
+             (let* ((proc-buf (process-buffer proc))
+                    ;; Safely get the window ONLY on the current frame
+                    (proc-win (when (buffer-live-p proc-buf)
+                                (get-buffer-window proc-buf))))
+               ;; Kill the buffer if requested
+               (when (and shell-pop-cleanup-buffer-at-process-exit
+                          (buffer-live-p proc-buf))
+                 (kill-buffer proc-buf))
+
+               ;; Only manipulate the window if it was visible on THIS frame
+               (when (window-live-p proc-win)
+                 (if (window-deletable-p proc-win)
+                     ;; Undo the shell-pop split
+                     (delete-window proc-win)
+                   ;; If it's the last window, safely swap the buffer
+                   (set-window-buffer
+                    proc-win
+                    (let ((target-buf (get-buffer shell-pop-last-buffer)))
+                      (if target-buf
+                          target-buf
+                        (if (fboundp 'get-scratch-buffer-create)
+                            (get-scratch-buffer-create)
+                          (get-buffer-create "*scratch*")))))))))))))))
 
 (defun shell-pop--switch-to-shell-buffer (index)
   (let ((bufname (shell-pop--shell-buffer-name index)))
@@ -327,8 +346,8 @@ The input format is the same as that of `kbd'."
       (delete-other-windows))
     (if w
         (select-window w)
-      ;; save shell-pop-last-buffer and shell-pop-last-window to return
-      (setq shell-pop-last-buffer (buffer-name)
+      ;; save shell-pop-last-buffer as buffer object and `shell-pop-last-window'
+      (setq shell-pop-last-buffer (current-buffer)
             shell-pop-last-window (selected-window))
       (when (and (not (= shell-pop-window-height 100))
                  (not (shell-pop--full-p)))
@@ -350,12 +369,15 @@ The input format is the same as that of `kbd'."
         (set-window-configuration window-conf)
         (when (marker-buffer marker)
           (goto-char marker)))
-    (when (and (not (one-window-p)) (not (= shell-pop-window-height 100)))
+    (when (and (window-deletable-p) (not (= shell-pop-window-height 100)))
       (bury-buffer)
       (delete-window)
-      (select-window shell-pop-last-window))
+      (when (window-live-p shell-pop-last-window)
+        (select-window shell-pop-last-window)))
     (when shell-pop-restore-window-configuration
-      (switch-to-buffer shell-pop-last-buffer))))
+      (let ((buffer (get-buffer shell-pop-last-buffer)))
+        (when buffer
+          (switch-to-buffer buffer))))))
 
 (defun shell-pop-split-window ()
   (unless (shell-pop--full-p)
