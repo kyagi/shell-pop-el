@@ -73,6 +73,8 @@
 (defvar shell-pop-last-shell-buffer-index 1)
 (defvar shell-pop-last-shell-buffer-name "")
 (defvar shell-pop-window-configuration nil)
+(defvar-local shell-pop--is-shell-buffer nil
+  "Non-nil if the current buffer is managed by shell-pop.")
 ;; internal}
 
 (defcustom shell-pop-window-size 30
@@ -219,7 +221,7 @@ The input format is the same as that of `kbd'."
 ;;;###autoload
 (defun shell-pop (arg)
   (interactive "P")
-  (if (string= (buffer-name) shell-pop-last-shell-buffer-name)
+  (if shell-pop--is-shell-buffer
       (if (null arg)
           (shell-pop-out)
         (shell-pop--switch-to-shell-buffer (prefix-numeric-value arg)))
@@ -292,6 +294,7 @@ The input format is the same as that of `kbd'."
       (funcall (eval shell-pop-internal-mode-func))
       (rename-buffer bufname)
       (shell-pop--set-exit-action))
+    (setq shell-pop--is-shell-buffer t)
     (setq shell-pop-last-shell-buffer-name bufname
           shell-pop-last-shell-buffer-index index)))
 
