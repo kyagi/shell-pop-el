@@ -51,13 +51,14 @@
 (eval-when-compile
   (defvar shell-pop-universal-key)
   (defvar eshell-last-input-start)
-  (defvar eshell-last-input-end))
+  (defvar eshell-last-input-end)
+  (defvar term-raw-map)) ; Mute compiler warning for optional variable
 
 (declare-function eshell-send-input "esh-mode")
 (declare-function eshell-reset "esh-mode")
 (declare-function eshell-process-interact "esh-proc")
-
-(require 'term)
+(declare-function term-check-proc "term")
+(declare-function term-send-raw-string "term")
 
 (defgroup shell-pop ()
   "Shell-pop"
@@ -108,7 +109,8 @@
         shell-pop-internal-mode-buffer (nth 1 value)
         shell-pop-internal-mode-func (nth 2 value))
   (when (and (string= shell-pop-internal-mode "ansi-term")
-             shell-pop-universal-key)
+             shell-pop-universal-key
+             (boundp 'term-raw-map))
     (define-key term-raw-map (read-kbd-macro shell-pop-universal-key) 'shell-pop)))
 
 (defcustom shell-pop-shell-type '("shell" "*shell*" (lambda () (shell)))
@@ -123,9 +125,13 @@ The value is a list with these items:
           (const :tag "shell"
                  ("shell" "*shell*" (lambda () (shell))))
           (const :tag "terminal"
-                 ("terminal" "*terminal*" (lambda () (term shell-pop-term-shell))))
+                 ("terminal" "*terminal*" (lambda ()
+                                            (when (fboundp 'term)
+                                              (term shell-pop-term-shell)))))
           (const :tag "ansi-term"
-                 ("ansi-term" "*ansi-term*" (lambda () (ansi-term shell-pop-term-shell))))
+                 ("ansi-term" "*ansi-term*" (lambda ()
+                                              (when (fboundp 'ansi-term)
+                                                (ansi-term shell-pop-term-shell)))))
           (const :tag "eshell"
                  ("eshell" "*eshell*" (lambda () (eshell)))))
   :set 'shell-pop--set-shell-type
@@ -162,7 +168,8 @@ effect when `shell-pop-window-position' value is \"full\"."
   (set-default symbol value)
   (when value (global-set-key (read-kbd-macro value) 'shell-pop))
   (when (and (string= shell-pop-internal-mode "ansi-term")
-             shell-pop-universal-key)
+             shell-pop-universal-key
+             (boundp 'term-raw-map))
     (define-key term-raw-map (read-kbd-macro value) 'shell-pop)))
 
 ;;;###autoload
@@ -203,7 +210,8 @@ The input format is the same as that of `kbd'."
 (defun shell-pop-check-internal-mode-buffer (index)
   (let ((bufname (shell-pop--shell-buffer-name index)))
     (when (get-buffer bufname)
-      (if (or (term-check-proc bufname)
+      (if (or (and (fboundp 'term-check-proc)
+                   (term-check-proc bufname))
               (string= shell-pop-internal-mode "eshell"))
           bufname
         (kill-buffer bufname)
@@ -238,8 +246,9 @@ The input format is the same as that of `kbd'."
   (recenter 0))
 
 (defun shell-pop--cd-to-cwd-term (cwd)
-  (term-send-raw-string (concat "cd " (shell-quote-argument cwd) "\n"))
-  (term-send-raw-string "\C-l"))
+  (when (fboundp 'term-send-raw-string)
+    (term-send-raw-string (concat "cd " (shell-quote-argument cwd) "\n"))
+    (term-send-raw-string "\C-l")))
 
 (defun shell-pop--cd-to-cwd (cwd)
   (let ((abspath (expand-file-name cwd)))
