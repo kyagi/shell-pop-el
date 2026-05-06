@@ -265,11 +265,27 @@ The input format is the same as that of `kbd'."
     (round (* size (/ (- 100 shell-pop-window-height) 100.0)))))
 
 (defun shell-pop--kill-and-delete-window ()
-  ;; Explicitly target the buffer's window to prevent deleting the user's active
-  ;; window if shell exits in the background.
-  (let ((win (get-buffer-window (current-buffer))))
-    (when (and (window-live-p win) (eq (window-deletable-p win) t))
-      (delete-window win))))
+  ;; Unified Eshell cleanup to mirror process-sentinel behavior exactly.
+  (let* ((buf (current-buffer))
+         (win (get-buffer-window buf))
+         (target-buf (when (window-live-p win)
+                       (window-parameter win 'shell-pop-last-buffer))))
+
+    (when (and shell-pop-cleanup-buffer-at-process-exit
+               (buffer-live-p buf))
+      (kill-buffer buf))
+
+    (when (window-live-p win)
+      (set-window-parameter win 'shell-pop-is-window nil)
+      (if (eq (window-deletable-p win) t)
+          (delete-window win)
+        (set-window-buffer
+         win
+         (if (and target-buf (buffer-live-p target-buf))
+             target-buf
+           (if (fboundp 'get-scratch-buffer-create)
+               (get-scratch-buffer-create)
+             (get-buffer-create "*scratch*"))))))))
 
 (defun shell-pop--set-exit-action ()
   (if (string= shell-pop-internal-mode "eshell")
@@ -299,7 +315,8 @@ The input format is the same as that of `kbd'."
 
                ;; Only manipulate the window if it was visible on THIS frame
                (when (window-live-p proc-win)
-                 ;; FIX: Clear identity to prevent "zombie" toggles if window survives
+                 ;; Clear identity to prevent "zombie" toggles if window
+                 ;; survives
                  (set-window-parameter proc-win 'shell-pop-is-window nil)
                  (if (eq (window-deletable-p proc-win) t)
                      (delete-window proc-win)
@@ -347,24 +364,34 @@ The input format is the same as that of `kbd'."
                   (setq index (car ret))
                   (cdr ret))
               (shell-pop-get-internal-mode-buffer-window index)))
-         (cwd (replace-regexp-in-string "\\\\" "/" default-directory))
+         (cwd (when default-directory
+                (replace-regexp-in-string "\\\\" "/" default-directory)))
          (last-buf (current-buffer))
          (last-win (selected-window))
          ;; Only save full config in full mode so we don't accidentally revert
          ;; independent frame layout changes when closing a standard split
          (win-conf (when (shell-pop--full-p)
                      (list (current-window-configuration) (point-marker)))))
-
-    (when (shell-pop--full-p)
-      (delete-other-windows))
-
+    ;; Navigate to the target window BEFORE deleting other windows
+    ;; to prevent a crash if the target window is unselected in 'full' mode.
     (if w
         (select-window w)
       (unless (shell-pop--full-p)
         (let ((new-window (shell-pop-split-window)))
-          (select-window new-window)))
-      (when (and shell-pop-default-directory (file-directory-p shell-pop-default-directory))
-        (cd shell-pop-default-directory))
+          (select-window new-window))))
+
+    (when (shell-pop--full-p)
+      (delete-other-windows))
+
+    ;; Dynamically bind default-directory instead of using cd. This prevents
+    ;; "buffer poisoning" where the user's active code buffer gets its working
+    ;; directory overwritten.
+    (let ((default-directory
+           (if (and shell-pop-default-directory
+                    (file-directory-p shell-pop-default-directory))
+               (file-name-as-directory (expand-file-name
+                                        shell-pop-default-directory))
+             default-directory)))
       (shell-pop--switch-to-shell-buffer index))
 
     (set-window-parameter nil 'shell-pop-is-window t)
@@ -373,7 +400,10 @@ The input format is the same as that of `kbd'."
     (when (shell-pop--full-p)
       (set-window-parameter nil 'shell-pop-window-config win-conf))
 
+    ;; Safely check string equality only if both directories exist
     (when (and shell-pop-autocd-to-working-dir
+               cwd
+               default-directory
                (not (string= cwd default-directory)))
       (shell-pop--cd-to-cwd cwd))
     (run-hooks 'shell-pop-in-after-hook)))
