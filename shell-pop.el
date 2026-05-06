@@ -251,7 +251,8 @@ The input format is the same as that of `kbd'."
            (shell-pop--cd-to-cwd-term abspath)))))
 
 (defsubst shell-pop--full-p ()
-  (string= shell-pop-window-position "full"))
+  (or (string= shell-pop-window-position "full")
+      (>= shell-pop-window-height 100)))
 
 (defsubst shell-pop--split-side-p ()
   (member shell-pop-window-position '("left" "right")))
@@ -264,8 +265,11 @@ The input format is the same as that of `kbd'."
     (round (* size (/ (- 100 shell-pop-window-height) 100.0)))))
 
 (defun shell-pop--kill-and-delete-window ()
-  (when (eq (window-deletable-p) t) ; t to ignore 'frame and 'tab
-    (delete-window)))
+  ;; Explicitly target the buffer's window to prevent deleting the user's active
+  ;; window if shell exits in the background.
+  (let ((win (get-buffer-window (current-buffer))))
+    (when (and (window-live-p win) (eq (window-deletable-p win) t))
+      (delete-window win))))
 
 (defun shell-pop--set-exit-action ()
   (if (string= shell-pop-internal-mode "eshell")
@@ -295,8 +299,9 @@ The input format is the same as that of `kbd'."
 
                ;; Only manipulate the window if it was visible on THIS frame
                (when (window-live-p proc-win)
-                 (if (eq (window-deletable-p proc-win) t) ; Ignore frame/tab
-                     ;; Undo the shell-pop split
+                 ;; FIX: Clear identity to prevent "zombie" toggles if window survives
+                 (set-window-parameter proc-win 'shell-pop-is-window nil)
+                 (if (eq (window-deletable-p proc-win) t)
                      (delete-window proc-win)
                    ;; If it's the last window, safely swap the buffer
                    (set-window-buffer
@@ -319,10 +324,10 @@ The input format is the same as that of `kbd'."
 
 (defun shell-pop--translate-position (pos)
   (cond
-    ((string= pos "top") 'above)
-    ((string= pos "bottom") 'below)
-    ((string= pos "left") 'left)
-    ((string= pos "right") 'right)))
+   ((string= pos "top") 'above)
+   ((string= pos "bottom") 'below)
+   ((string= pos "left") 'left)
+   ((string= pos "right") 'right)))
 
 (defun shell-pop-get-unused-internal-mode-buffer-window ()
   (let ((finish nil)
@@ -345,14 +350,17 @@ The input format is the same as that of `kbd'."
          (cwd (replace-regexp-in-string "\\\\" "/" default-directory))
          (last-buf (current-buffer))
          (last-win (selected-window))
+         ;; Only save full config in full mode so we don't accidentally revert
+         ;; independent frame layout changes when closing a standard split
          (win-conf (when (shell-pop--full-p)
                      (list (current-window-configuration) (point-marker)))))
+
     (when (shell-pop--full-p)
       (delete-other-windows))
+
     (if w
         (select-window w)
-      (when (and (not (= shell-pop-window-height 100))
-                 (not (shell-pop--full-p)))
+      (unless (shell-pop--full-p)
         (let ((new-window (shell-pop-split-window)))
           (select-window new-window)))
       (when (and shell-pop-default-directory (file-directory-p shell-pop-default-directory))
@@ -376,26 +384,29 @@ The input format is the same as that of `kbd'."
          (last-win (window-parameter win 'shell-pop-last-window))
          (last-buf (window-parameter win 'shell-pop-last-buffer))
          (win-conf (window-parameter win 'shell-pop-window-config)))
-    (if (shell-pop--full-p)
-        (when win-conf
+    ;; Strip the identity so the window doesn't trap toggles if it survives
+    (set-window-parameter win 'shell-pop-is-window nil)
+
+    (if (and (shell-pop--full-p)
+             win-conf
+             (window-configuration-p (car win-conf)))
+        (progn
           (set-window-configuration (car win-conf))
           (when (marker-buffer (cadr win-conf))
             (goto-char (cadr win-conf))))
+      ;; For non-full splits: Always bury the shell buffer out of sight
+      (bury-buffer)
 
-      ;; Always get the shell buffer out of the way when not in 100% height
-      (when (not (= shell-pop-window-height 100))
-        (bury-buffer)
+      (when (eq (window-deletable-p win) t)
+        (delete-window win)
+        (when (window-live-p last-win)
+          (select-window last-win)))
 
-        ;; Only attempt to delete the window if it's strictly safe
-        (when (eq (window-deletable-p win) t)
-          (delete-window win)
-          (when (window-live-p last-win)
-            (select-window last-win))))
-
-      ;; Restore the originating buffer if configured
+      ;; The variable is named "restore-window-configuration", but its
+      ;; intended behavior is actually to just restore the originating buffer.
       (when shell-pop-restore-window-configuration
         (when (and last-buf (buffer-live-p last-buf))
-          (switch-to-buffer last-buf))))))
+          (set-window-buffer (selected-window) last-buf))))))
 
 (defun shell-pop-split-window ()
   (unless (shell-pop--full-p)
