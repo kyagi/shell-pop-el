@@ -58,7 +58,6 @@
 (declare-function eshell-process-interact "esh-proc")
 
 (require 'term)
-(require 'cl-lib)
 
 (defgroup shell-pop ()
   "Shell-pop"
@@ -68,11 +67,9 @@
 (defvar shell-pop-internal-mode "shell")
 (defvar shell-pop-internal-mode-buffer "*shell*")
 (defvar shell-pop-internal-mode-func '(lambda () (shell)))
-(defvar shell-pop-last-buffer nil)
-(defvar shell-pop-last-window nil)
 (defvar shell-pop-last-shell-buffer-index 1)
-(defvar shell-pop-last-shell-buffer-name "")
-(defvar shell-pop-window-configuration nil)
+(defvar-local shell-pop--is-shell-buffer nil
+  "Non-nil if the current buffer is managed by shell-pop.")
 ;; internal}
 
 (defcustom shell-pop-window-size 30
@@ -219,7 +216,8 @@ The input format is the same as that of `kbd'."
 ;;;###autoload
 (defun shell-pop (arg)
   (interactive "P")
-  (if (string= (buffer-name) shell-pop-last-shell-buffer-name)
+  (if (or shell-pop--is-shell-buffer
+          (window-parameter nil 'shell-pop-is-window))
       (if (null arg)
           (shell-pop-out)
         (shell-pop--switch-to-shell-buffer (prefix-numeric-value arg)))
@@ -266,7 +264,7 @@ The input format is the same as that of `kbd'."
     (round (* size (/ (- 100 shell-pop-window-height) 100.0)))))
 
 (defun shell-pop--kill-and-delete-window ()
-  (when (window-deletable-p)
+  (when (eq (window-deletable-p) t) ; t to ignore 'frame and 'tab
     (delete-window)))
 
 (defun shell-pop--set-exit-action ()
@@ -283,26 +281,31 @@ The input format is the same as that of `kbd'."
              (let* ((proc-buf (process-buffer proc))
                     ;; Safely get the window ONLY on the current frame
                     (proc-win (when (buffer-live-p proc-buf)
-                                (get-buffer-window proc-buf))))
-               ;; Kill the buffer if requested
+                                (get-buffer-window proc-buf)))
+                    ;; Safely grab the target buffer BEFORE we kill the process
+                    ;; buffer since killing it might cause Emacs to destroy
+                    ;; proc-win entirely.
+                    (target-buf (when (window-live-p proc-win)
+                                  (window-parameter proc-win
+                                                    'shell-pop-last-buffer))))
+
                (when (and shell-pop-cleanup-buffer-at-process-exit
                           (buffer-live-p proc-buf))
                  (kill-buffer proc-buf))
 
                ;; Only manipulate the window if it was visible on THIS frame
                (when (window-live-p proc-win)
-                 (if (window-deletable-p proc-win)
+                 (if (eq (window-deletable-p proc-win) t) ; Ignore frame/tab
                      ;; Undo the shell-pop split
                      (delete-window proc-win)
                    ;; If it's the last window, safely swap the buffer
                    (set-window-buffer
                     proc-win
-                    (let ((target-buf (get-buffer shell-pop-last-buffer)))
-                      (if target-buf
-                          target-buf
-                        (if (fboundp 'get-scratch-buffer-create)
-                            (get-scratch-buffer-create)
-                          (get-buffer-create "*scratch*")))))))))))))))
+                    (if (and target-buf (buffer-live-p target-buf))
+                        target-buf
+                      (if (fboundp 'get-scratch-buffer-create)
+                          (get-scratch-buffer-create)
+                        (get-buffer-create "*scratch*"))))))))))))))
 
 (defun shell-pop--switch-to-shell-buffer (index)
   (let ((bufname (shell-pop--shell-buffer-name index)))
@@ -311,8 +314,8 @@ The input format is the same as that of `kbd'."
       (funcall (eval shell-pop-internal-mode-func))
       (rename-buffer bufname)
       (shell-pop--set-exit-action))
-    (setq shell-pop-last-shell-buffer-name bufname
-          shell-pop-last-shell-buffer-index index)))
+    (setq shell-pop--is-shell-buffer t)
+    (setq shell-pop-last-shell-buffer-index index)))
 
 (defun shell-pop--translate-position (pos)
   (cond
@@ -334,21 +337,20 @@ The input format is the same as that of `kbd'."
 
 (defun shell-pop-up (index)
   (run-hooks 'shell-pop-in-hook)
-  (let ((w (if (listp index)
-               (let ((ret (shell-pop-get-unused-internal-mode-buffer-window)))
-                 (setq index (car ret))
-                 (cdr ret))
-             (shell-pop-get-internal-mode-buffer-window index)))
-        (cwd (replace-regexp-in-string "\\\\" "/" default-directory)))
+  (let* ((w (if (listp index)
+                (let ((ret (shell-pop-get-unused-internal-mode-buffer-window)))
+                  (setq index (car ret))
+                  (cdr ret))
+              (shell-pop-get-internal-mode-buffer-window index)))
+         (cwd (replace-regexp-in-string "\\\\" "/" default-directory))
+         (last-buf (current-buffer))
+         (last-win (selected-window))
+         (win-conf (when (shell-pop--full-p)
+                     (list (current-window-configuration) (point-marker)))))
     (when (shell-pop--full-p)
-      (setq shell-pop-window-configuration
-            (list (current-window-configuration) (point-marker)))
       (delete-other-windows))
     (if w
         (select-window w)
-      ;; save shell-pop-last-buffer as buffer object and `shell-pop-last-window'
-      (setq shell-pop-last-buffer (current-buffer)
-            shell-pop-last-window (selected-window))
       (when (and (not (= shell-pop-window-height 100))
                  (not (shell-pop--full-p)))
         (let ((new-window (shell-pop-split-window)))
@@ -356,6 +358,13 @@ The input format is the same as that of `kbd'."
       (when (and shell-pop-default-directory (file-directory-p shell-pop-default-directory))
         (cd shell-pop-default-directory))
       (shell-pop--switch-to-shell-buffer index))
+
+    (set-window-parameter nil 'shell-pop-is-window t)
+    (set-window-parameter nil 'shell-pop-last-window last-win)
+    (set-window-parameter nil 'shell-pop-last-buffer last-buf)
+    (when (shell-pop--full-p)
+      (set-window-parameter nil 'shell-pop-window-config win-conf))
+
     (when (and shell-pop-autocd-to-working-dir
                (not (string= cwd default-directory)))
       (shell-pop--cd-to-cwd cwd))
@@ -363,21 +372,30 @@ The input format is the same as that of `kbd'."
 
 (defun shell-pop-out ()
   (run-hooks 'shell-pop-out-hook)
-  (if (shell-pop--full-p)
-      (let ((window-conf (cl-first shell-pop-window-configuration))
-            (marker (cl-second shell-pop-window-configuration)))
-        (set-window-configuration window-conf)
-        (when (marker-buffer marker)
-          (goto-char marker)))
-    (when (and (window-deletable-p) (not (= shell-pop-window-height 100)))
-      (bury-buffer)
-      (delete-window)
-      (when (window-live-p shell-pop-last-window)
-        (select-window shell-pop-last-window)))
-    (when shell-pop-restore-window-configuration
-      (let ((buffer (get-buffer shell-pop-last-buffer)))
-        (when buffer
-          (switch-to-buffer buffer))))))
+  (let* ((win (selected-window))
+         (last-win (window-parameter win 'shell-pop-last-window))
+         (last-buf (window-parameter win 'shell-pop-last-buffer))
+         (win-conf (window-parameter win 'shell-pop-window-config)))
+    (if (shell-pop--full-p)
+        (when win-conf
+          (set-window-configuration (car win-conf))
+          (when (marker-buffer (cadr win-conf))
+            (goto-char (cadr win-conf))))
+
+      ;; Always get the shell buffer out of the way when not in 100% height
+      (when (not (= shell-pop-window-height 100))
+        (bury-buffer)
+
+        ;; Only attempt to delete the window if it's strictly safe
+        (when (eq (window-deletable-p win) t)
+          (delete-window win)
+          (when (window-live-p last-win)
+            (select-window last-win))))
+
+      ;; Restore the originating buffer if configured
+      (when shell-pop-restore-window-configuration
+        (when (and last-buf (buffer-live-p last-buf))
+          (switch-to-buffer last-buf))))))
 
 (defun shell-pop-split-window ()
   (unless (shell-pop--full-p)
