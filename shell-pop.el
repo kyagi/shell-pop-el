@@ -457,8 +457,7 @@ With prefix ARG, switch to or create a specific shell buffer index."
     ;; Safely check string equality only if both directories exist
     (when (and shell-pop-autocd-to-working-dir
                cwd
-               default-directory
-               (not (string= cwd default-directory)))
+               (file-directory-p cwd))
       (shell-pop--cd-to-cwd cwd))
     (run-hooks 'shell-pop-in-after-hook)))
 
