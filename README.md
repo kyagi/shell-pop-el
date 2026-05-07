@@ -19,15 +19,34 @@ To install **shell-pop** from MELPA:
 
 ```emacs-lisp
 (use-package shell-pop
-  :commands shell-pop
-  ;; :bind automatically sets up the keybinding AND tells Emacs to
-  ;; lazy-load the package the moment the key is pressed.
+  ;; :bind automatically sets up the keybinding AND tells Emacs to lazy-load the
+  ;; package the moment the key is pressed.
   :bind (("C-c t" . shell-pop))
   :custom
+  ;; The key sequence used to toggle the shell window.
   (shell-pop-universal-key "C-c t")
-  (shell-pop-shell-type '("ansi-term"
-                          "*ansi-term*"
-                          (lambda () (ansi-term shell-pop-term-shell)))))
+
+  ;; Sets the screen position where the shell popup appears.
+  ;; You can choose "bottom", "top", "right", "left", or "full".
+  (shell-pop-window-position "bottom")
+
+  ;; If non-nil, the window stretches across the entire frame width.
+  (shell-pop-full-span nil)
+
+  ;; The path to the shell executable used by the terminal emulator.
+  (shell-pop-term-shell shell-file-name)
+
+  ;; The height or width of the window as a percentage of the frame.
+  (shell-pop-window-size 30)
+
+  ;; Defines the terminal implementation and its initialization logic.
+  (shell-pop-shell-type '("ansi-term" "*ansi-term*"
+                          (lambda ()
+                            (ansi-term shell-pop-term-shell))))
+
+  ;; Setting this to non-nil sends commands to the shell. This is not always
+  ;; desirable, as it can send commands to any prompt.
+  (shell-pop-autocd-to-working-dir nil))
 ```
 
 ### Manual installation
