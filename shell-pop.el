@@ -278,10 +278,12 @@ With prefix ARG, switch to or create a specific shell buffer index."
   (recenter 0))
 
 (defun shell-pop--cd-to-cwd-term (cwd)
-  "Change the current working directory to CWD in term."
+  "Change the terminal's directory to CWD and clear the screen."
   (when (fboundp 'term-send-raw-string)
-    (term-send-raw-string (concat "cd " (shell-quote-argument cwd) "\n"))
-    (term-send-raw-string "\C-l")))
+    ;; Send the CD command and a Newline
+    (term-send-raw-string (concat " cd " (shell-quote-argument cwd) "\n"))
+    ;; Send the clear command and a Newline
+    (term-send-raw-string "clear\n")))
 
 (defun shell-pop--cd-to-cwd (cwd)
   "Change the current working directory of the shell buffer to CWD."
