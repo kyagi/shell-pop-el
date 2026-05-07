@@ -19,7 +19,15 @@ To install **shell-pop** from MELPA:
 
 ```emacs-lisp
 (use-package shell-pop
-  :commands shell-pop)
+  :commands shell-pop
+  ;; :bind automatically sets up the keybinding AND tells Emacs to
+  ;; lazy-load the package the moment the key is pressed.
+  :bind (("C-c t" . shell-pop))
+  :custom
+  (shell-pop-universal-key "C-c t")
+  (shell-pop-shell-type '("ansi-term"
+                          "*ansi-term*"
+                          (lambda () (ansi-term shell-pop-term-shell)))))
 ```
 
 ### Manual installation
@@ -37,6 +45,44 @@ Make sure to place shell-pop.el somewhere in the load-path and add the following
 ```
 
 ## Customization
+
+### Configuring the terminal
+
+Here are the exact configurations for the four most popular built-in Emacs shells. Simply copy and paste your preferred option into your init file:
+
+#### ansi-term
+*Note: This will use the shell defined in your `shell-file-name` variable (e.g., bash, zsh).*
+```elisp
+(with-eval-after-load 'shell-pop
+  (setopt shell-pop-shell-type '("ansi-term" "*ansi-term*"
+                                 (lambda ()
+                                   (ansi-term shell-pop-term-shell)))))
+```
+
+#### term
+```elisp
+(with-eval-after-load 'shell-pop
+  (setopt shell-pop-shell-type '("terminal" "*terminal*"
+                                 (lambda ()
+                                   (term shell-pop-term-shell)))))
+```
+
+#### Shell
+```elisp
+(with-eval-after-load 'shell-pop
+  (setopt shell-pop-shell-type '("shell" "*shell*"
+                                 (lambda ()
+                                   (shell)))))
+```
+
+#### Eshell
+```elisp
+(with-eval-after-load 'shell-pop
+  (setopt shell-pop-shell-type '("eshell" "*eshell*"
+                                 (lambda ()
+                                   (eshell)))))
+```
+
 
 ### Configuration Options
 
