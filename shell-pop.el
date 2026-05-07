@@ -30,14 +30,15 @@
 ;; single, configurable key binding.
 ;;
 ;; The package supports multiple terminal implementations, including term,
-;; `eshell' and `ansi-term', and ensures your original window configuration is
-;; restored when the terminal is hidden.
+;; `eshell', `ansi-term', `vterm', and `eat', and ensures your original window
+;; configuration is restored when the terminal is hidden.
 ;;
 ;; Configuration:
 ;; --------------
 ;; Use M-x customize-variable RET `shell-pop-shell-type' RET to customize the
-;; shell to use. Four pre-set options are: `shell', `terminal', `ansi-term', and
-;; `eshell'. You can also set your custom shell if you use other configuration.
+;; shell to use. Six pre-set options are: `shell', `terminal', `ansi-term',
+;; `eshell', `vterm', and `eat'. You can also set your custom shell if you use
+;; other configuration.
 ;;
 ;; For `terminal' and `ansi-term' options, you can set the underlying shell by
 ;; customizing `shell-pop-term-shell'. By default, `shell-file-name' is used.
@@ -51,7 +52,8 @@
   (defvar shell-pop-universal-key)
   (defvar eshell-last-input-start)
   (defvar eshell-last-input-end)
-  (defvar term-raw-map)) ; Mute compiler warning for optional variable
+  (defvar term-raw-map)
+  (defvar eat-terminal)) ; Mute compiler warning for optional variable
 
 (declare-function eshell-send-input "esh-mode")
 (declare-function eshell-reset "esh-mode")
@@ -60,6 +62,11 @@
 (declare-function term-send-raw-string "term")
 (declare-function comint-kill-input "comint")
 (declare-function comint-send-input "comint")
+(declare-function vterm "vterm")
+(declare-function vterm-send-string "vterm")
+(declare-function vterm-send-return "vterm")
+(declare-function eat "eat")
+(declare-function eat-term-send-string "eat")
 
 (defgroup shell-pop ()
   "Shell-pop."
@@ -127,15 +134,29 @@ The value is a list with these items:
           (const :tag "shell"
                  ("shell" "*shell*" (lambda () (shell))))
           (const :tag "terminal"
-                 ("terminal" "*terminal*" (lambda ()
-                                            (when (fboundp 'term)
-                                              (term shell-pop-term-shell)))))
+                 ("terminal" "*terminal*"
+                  (lambda ()
+                    (when (fboundp 'term)
+                      (term shell-pop-term-shell)))))
           (const :tag "ansi-term"
-                 ("ansi-term" "*ansi-term*" (lambda ()
-                                              (when (fboundp 'ansi-term)
-                                                (ansi-term shell-pop-term-shell)))))
+                 ("ansi-term" "*ansi-term*"
+                  (lambda ()
+                    (when (fboundp 'ansi-term)
+                      (ansi-term shell-pop-term-shell)))))
           (const :tag "eshell"
-                 ("eshell" "*eshell*" (lambda () (eshell)))))
+                 ("eshell" "*eshell*"
+                  (lambda () (eshell))))
+          (const :tag "vterm"
+                 ("vterm" "*vterm*"
+                  (lambda ()
+                    (when (fboundp 'vterm)
+                      (let ((vterm-shell shell-pop-term-shell))
+                        (vterm))))))
+          (const :tag "eat"
+                 ("eat" "*eat*"
+                  (lambda ()
+                    (when (fboundp 'eat)
+                      (eat shell-pop-term-shell))))))
   :set 'shell-pop--set-shell-type
   :group 'shell-pop)
 
@@ -215,7 +236,10 @@ The input format is the same as that of `kbd'."
     (when (get-buffer bufname)
       (if (or (and (fboundp 'term-check-proc)
                    (term-check-proc bufname))
-              (string= shell-pop-internal-mode "eshell"))
+              (string= shell-pop-internal-mode "eshell")
+              (and (member shell-pop-internal-mode '("vterm" "eat"))
+                   (let ((proc (get-buffer-process bufname)))
+                     (and proc (memq (process-status proc) '(run stop))))))
           bufname
         (kill-buffer bufname)
         nil))
@@ -285,6 +309,18 @@ With prefix ARG, switch to or create a specific shell buffer index."
     ;; Send the clear command and a Newline
     (term-send-raw-string "clear\n")))
 
+(defun shell-pop--cd-to-cwd-vterm (cwd)
+  "Change the terminal's directory to CWD and clear the screen in vterm."
+  (when (fboundp 'vterm-send-string)
+    (vterm-send-string (concat "cd " (shell-quote-argument cwd) "\nclear\n"))))
+
+(defun shell-pop--cd-to-cwd-eat (cwd)
+  "Change the terminal's directory to CWD and clear the screen in eat."
+  (let ((proc (get-buffer-process (current-buffer))))
+    (when (and proc (fboundp 'eat-term-send-string))
+      ;; Use the process object directly if eat-terminal isn't in scope
+      (process-send-string proc (concat "cd " (shell-quote-argument cwd) "\nclear\n")))))
+
 (defun shell-pop--cd-to-cwd (cwd)
   "Change the current working directory of the shell buffer to CWD."
   (let ((abspath (expand-file-name cwd)))
@@ -292,6 +328,10 @@ With prefix ARG, switch to or create a specific shell buffer index."
            (shell-pop--cd-to-cwd-eshell abspath))
           ((string= shell-pop-internal-mode "shell")
            (shell-pop--cd-to-cwd-shell abspath))
+          ((string= shell-pop-internal-mode "vterm")
+           (shell-pop--cd-to-cwd-vterm abspath))
+          ((string= shell-pop-internal-mode "eat")
+           (shell-pop--cd-to-cwd-eat abspath))
           (t
            (shell-pop--cd-to-cwd-term abspath)))))
 
