@@ -339,7 +339,7 @@ With prefix ARG, switch to or create a specific shell buffer index."
 (defun shell-pop--set-exit-action ()
   "Set the action to perform when the shell process exits."
   (if (string= shell-pop-internal-mode "eshell")
-      (add-hook 'eshell-exit-hook 'shell-pop--kill-and-delete-window nil t)
+      (add-hook 'eshell-exit-hook 'shell-pop--kill-and-delete-window t t)
     (let ((process (get-buffer-process (current-buffer))))
       (when process
         (set-process-sentinel
