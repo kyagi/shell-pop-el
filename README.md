@@ -5,7 +5,7 @@
 
 The **shell-pop** Emacs package provides on-demand access to a terminal through a single, configurable key binding.
 
-The package supports multiple terminal implementations, including `term`, `eshell` and `ansi-term`, and ensures your original window configuration is restored when the terminal is hidden.
+The package supports multiple terminal implementations, including `term`, `eshell`, `ansi-term`, `vterm`, and `eat`, and ensures your original window configuration is restored when the terminal is hidden.
 
 ## Installation
 
@@ -48,7 +48,7 @@ Make sure to place shell-pop.el somewhere in the load-path and add the following
 
 ### Configuring the terminal
 
-Here are the exact configurations for the four most popular built-in Emacs shells. Simply copy and paste your preferred option into your init file:
+Here are the exact configurations for the most popular Emacs shells. Simply copy and paste your preferred option into your init file:
 
 #### ansi-term
 *Note: This will use the shell defined in your `shell-file-name` variable (e.g., bash, zsh).*
@@ -65,6 +65,31 @@ Here are the exact configurations for the four most popular built-in Emacs shell
   (setopt shell-pop-shell-type '("terminal" "*terminal*"
                                  (lambda ()
                                    (term shell-pop-term-shell)))))
+```
+
+#### vterm
+
+*Note: Requires the `vterm` package to be installed.*
+
+```elisp
+(with-eval-after-load 'shell-pop
+  (setopt shell-pop-shell-type '("vterm" "*vterm*"
+                                 (lambda ()
+                                   (when (fboundp 'vterm)
+                                     (let ((vterm-shell shell-pop-term-shell))
+                                       (vterm)))))))
+```
+
+#### eat
+
+*Note: Requires the `eat` package to be installed.*
+
+```elisp
+(with-eval-after-load 'shell-pop
+  (setopt shell-pop-shell-type '("eat" "*eat*"
+                                 (lambda ()
+                                   (when (fboundp 'eat)
+                                     (eat shell-pop-term-shell))))))
 ```
 
 #### Shell
@@ -107,7 +132,7 @@ This option allows you to generate the shell window with the same width as the c
 
 ### M-x Customize
 
-Use `M-x customize-variable RET shell-pop-shell-type RET` to customize the shell to use. Four pre-set options are: `shell`, `terminal`, `ansi-term`, and `eshell`. You can also set your custom shell if you use other configuration.
+Use `M-x customize-variable RET shell-pop-shell-type RET` to customize the shell to use. Six pre-set options are: `shell`, `terminal`, `ansi-term`, `eshell`, `vterm`, and `eat`. You can also set your custom shell if you use other configuration.
 
 For the `terminal` and `ansi-term` options, you can set the underlying shell by customizing `shell-pop-term-shell`. By default, `shell-file-name` is used, but you can also specify paths like `/bin/tcsh`, `/bin/bash`, or `/bin/zsh`.
 
@@ -130,7 +155,7 @@ After saving the customized values, your init file will look similar to the foll
  '(shell-pop-autocd-to-working-dir t)
  '(shell-pop-restore-window-configuration t)
  '(shell-pop-cleanup-buffer-at-process-exit t))
- ```
+```
 
 ## Usage
 
