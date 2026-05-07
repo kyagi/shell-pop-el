@@ -224,12 +224,35 @@ The input format is the same as that of `kbd'."
 ;;;###autoload
 (defun shell-pop (arg)
   (interactive "P")
-  (if (or shell-pop--is-shell-buffer
-          (window-parameter nil 'shell-pop-is-window))
-      (if (null arg)
-          (shell-pop-out)
-        (shell-pop--switch-to-shell-buffer (prefix-numeric-value arg)))
-    (shell-pop-up (or arg shell-pop-last-shell-buffer-index))))
+  (let* ((index (or arg shell-pop-last-shell-buffer-index))
+         ;; Safely check for an existing window only if index is an integer. A
+         ;; raw prefix arg like '(4) will bypass this and let shell-pop-up
+         ;; handle it.
+         (window (and (integerp index)
+                 (shell-pop-get-internal-mode-buffer-window index))))
+    ;; Scenario A: The user is already INSIDE a shell window
+    (if (or shell-pop--is-shell-buffer
+            (window-parameter nil 'shell-pop-is-window))
+        ;; No prefix (null arg): The user pressed a hotkey. It runs
+        ;; `shell-pop-out' to close the shell.
+        (if (null arg)
+            (shell-pop-out)
+          ;; If a prefix arg is provided while inside the shell: A raw C-u '(4)
+          ;; should find a new unused index dynamically. Otherwise, use the
+          ;; exact numeric prefix (e.g., M-2 -> 2).
+          (let ((target-index
+                 (if (listp arg)
+                     (car (shell-pop-get-unused-internal-mode-buffer-window))
+                   (prefix-numeric-value arg))))
+            (shell-pop--switch-to-shell-buffer target-index)))
+      ;; Scenario B: The user is OUTSIDE the shell (e.g., in a code buffer)
+      (if (and window (null arg))
+          ;; The shell window (window) is visible somewhere else, and the user
+          ;; didn't pass a prefix, to that shell window and close it.
+          (progn
+            (select-window window)
+            (shell-pop-out))
+        (shell-pop-up index)))))
 
 (defun shell-pop--cd-to-cwd-eshell (cwd)
   (if (eshell-process-interact 'process-live-p)
