@@ -33,7 +33,8 @@ To install **shell-pop** from MELPA:
   ;; If non-nil, the window stretches across the entire frame width.
   (shell-pop-full-span nil)
 
-  ;; The path to the shell executable used by the terminal emulator.
+  ;; The path to the shell executable used by the terminal emulator
+  ;; (e.g., "/usr/bin/env bash").
   (shell-pop-term-shell shell-file-name)
 
   ;; The height or width of the window as a percentage of the frame.
@@ -56,10 +57,9 @@ You can install `shell-pop.el` from [MELPA](https://melpa.org/) using `package.e
 M-x package-install RET shell-pop RET
 ```
 
-Make sure to place shell-pop.el somewhere in the load-path and add the following lines to your init file (e.g., `~/.emacs.d/init.el`):
+Then add the following to your init file (e.g., `~/.emacs.d/init.el`):
 
 ```lisp
-(add-to-list 'load-path "/path/to/shell-pop")
 (require 'shell-pop)
 ```
 
