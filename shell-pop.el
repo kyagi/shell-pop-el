@@ -6,7 +6,7 @@
 ;; Maintainer:    James Cherti <https://www.jamescherti.com/contact/>
 ;; Maintainer:    Kazuo YAGI <kazuo.yagi@gmail.com>
 ;; URL:           http://github.com/kyagi/shell-pop-el
-;; Version:       0.64
+;; Version:       0.70
 ;; Keywords:      shell, terminal, tools
 ;; Compatibility: GNU 24.x
 ;; Package-Requires: ((emacs "26.1"))
