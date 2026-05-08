@@ -142,6 +142,26 @@ The percentage of the frame used for the shell buffer window size.
 
 This option allows you to generate the shell window with the same width as the current Emacs frame. It is beneficial when you use multiple side-by-side windows in Emacs. For more details, see [Issue #21](https://github.com/kyagi/shell-pop-el/pull/21#issuecomment-48876673).
 
+#### `shell-pop-default-directory` (Default: `nil`)
+
+If non-nil, changes the current directory to this specific path when first starting the shell.
+
+#### `shell-pop-term-shell` (Default: `explicit-shell-file-name`, the `ESHELL` environment variable, or `shell-file-name`)
+
+The path to the shell executable used by the `term` and `ansi-term` implementations (e.g., `"/bin/bash"` or `"/bin/zsh"`).
+
+#### `shell-pop-autocd-to-working-dir` (Default: `t`)
+
+If non-nil, automatically changes the directory of the shell buffer to match the working directory from which `shell-pop` was invoked.
+
+#### `shell-pop-restore-window-configuration` (Default: `t`)
+
+If non-nil, restores the window configuration when the `shell-pop` buffer is closed. The shell window is deleted in any case. This variable has no effect when the `shell-pop-window-position` value is `"full"`.
+
+#### `shell-pop-cleanup-buffer-at-process-exit` (Default: `t`)
+
+If non-nil, cleans up the shell's buffer automatically after its underlying process exits.
+
 ### Hooks
 
 - `shell-pop-in-hook`: Runs before the shell buffer pops up.
