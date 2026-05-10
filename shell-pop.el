@@ -29,7 +29,7 @@
 ;; The shell-pop package provides on-demand access to a terminal through a
 ;; single, configurable key binding.
 ;;
-;; The package supports multiple terminal implementations, including term,
+;; The package supports multiple terminal implementations, including `term',
 ;; `eshell', `ansi-term', `vterm', and `eat', and ensures your original window
 ;; configuration is restored when the terminal is hidden.
 ;;
@@ -355,7 +355,8 @@ With prefix ARG, switch to or create a specific shell buffer index."
 (defun shell-pop--kill-and-delete-window ()
   "Kill the current shell buffer and safely delete its window."
   ;; Unified Eshell cleanup to mirror process-sentinel behavior exactly.
-  (let* ((buf (current-buffer))
+  (let* ((inhibit-redisplay t)
+         (buf (current-buffer))
          (win (get-buffer-window buf))
          (target-buf (when (window-live-p win)
                        (window-parameter win 'shell-pop-last-buffer))))
@@ -388,7 +389,8 @@ With prefix ARG, switch to or create a specific shell buffer index."
            (when (string-match-p "\\(?:finished\\|exited\\)" change)
              (run-hooks 'shell-pop-process-exit-hook)
 
-             (let* ((proc-buf (process-buffer proc))
+             (let* ((inhibit-redisplay t)
+                    (proc-buf (process-buffer proc))
                     ;; Safely get the window ONLY on the current frame
                     (proc-win (when (buffer-live-p proc-buf)
                                 (get-buffer-window proc-buf)))
@@ -453,7 +455,8 @@ With prefix ARG, switch to or create a specific shell buffer index."
 (defun shell-pop-up (index)
   "Pop up the shell buffer designated by INDEX."
   (run-hooks 'shell-pop-in-hook)
-  (let* ((w (if (listp index)
+  (let* ((inhibit-redisplay t)
+         (w (if (listp index)
                 (let ((ret (shell-pop-get-unused-internal-mode-buffer-window)))
                   (setq index (car ret))
                   (cdr ret))
@@ -498,13 +501,14 @@ With prefix ARG, switch to or create a specific shell buffer index."
     (when (and shell-pop-autocd-to-working-dir
                cwd
                (file-directory-p cwd))
-      (shell-pop--cd-to-cwd cwd))
-    (run-hooks 'shell-pop-in-after-hook)))
+      (shell-pop--cd-to-cwd cwd)))
+  (run-hooks 'shell-pop-in-after-hook))
 
 (defun shell-pop-out ()
   "Hide the shell pop-up buffer and restore the previous layout."
   (run-hooks 'shell-pop-out-hook)
-  (let* ((win (selected-window))
+  (let* ((inhibit-redisplay t)
+         (win (selected-window))
          (last-win (window-parameter win 'shell-pop-last-window))
          (last-buf (window-parameter win 'shell-pop-last-buffer))
          (win-conf (window-parameter win 'shell-pop-window-config)))
