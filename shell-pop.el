@@ -271,6 +271,9 @@ The input format is the same as that of `kbd'."
   "Toggle the shell buffer pop-up.
 With prefix ARG, switch to or create a specific shell buffer index."
   (interactive "P")
+  ;; Prevent issue when invoking shell-pop while the minibuffer is active
+  (when (and (minibufferp) (window-live-p (minibuffer-selected-window)))
+    (select-window (minibuffer-selected-window)))
   (let* ((index (or arg shell-pop-last-shell-buffer-index))
          ;; Safely check for an existing window only if index is an integer. A
          ;; raw prefix arg like '(4) will bypass this and let shell-pop-up
@@ -376,11 +379,16 @@ With prefix ARG, switch to or create a specific shell buffer index."
          (buf (current-buffer))
          (win (get-buffer-window buf))
          (target-buf (when (window-live-p win)
-                       (window-parameter win 'shell-pop-last-buffer))))
+                       (window-parameter win 'shell-pop-last-buffer)))
+         (last-win (when (window-live-p win)
+                     (window-parameter win 'shell-pop-last-window))))
 
     (when (and shell-pop-cleanup-buffer-at-process-exit
                (buffer-live-p buf))
       (kill-buffer buf))
+
+    (when (window-live-p last-win)
+      (set-window-parameter last-win 'shell-pop-is-caller nil))
 
     (when (window-live-p win)
       (set-window-parameter win 'shell-pop-is-window nil)
@@ -416,11 +424,17 @@ With prefix ARG, switch to or create a specific shell buffer index."
                     ;; proc-win entirely.
                     (target-buf (when (window-live-p proc-win)
                                   (window-parameter proc-win
-                                                    'shell-pop-last-buffer))))
+                                                    'shell-pop-last-buffer)))
+                    (last-win (when (window-live-p proc-win)
+                                (window-parameter proc-win
+                                                  'shell-pop-last-window))))
 
                (when (and shell-pop-cleanup-buffer-at-process-exit
                           (buffer-live-p proc-buf))
                  (kill-buffer proc-buf))
+
+               (when (window-live-p last-win)
+                 (set-window-parameter last-win 'shell-pop-is-caller nil))
 
                ;; Only manipulate the window if it was visible on THIS frame
                (when (window-live-p proc-win)
@@ -524,6 +538,7 @@ With prefix ARG, switch to or create a specific shell buffer index."
     (set-window-parameter nil 'shell-pop-last-win-vscroll vscroll)
     (set-window-parameter nil 'shell-pop-last-win-point point)
     (set-window-parameter nil 'shell-pop-last-win-state state)
+    (set-window-parameter last-win 'shell-pop-is-caller t)
 
     (when (shell-pop--full-p)
       (set-window-parameter nil 'shell-pop-window-config win-conf))
@@ -561,42 +576,62 @@ With prefix ARG, switch to or create a specific shell buffer index."
       ;; For non-full splits: Always bury the shell buffer out of sight
       (bury-buffer)
 
-      (when (eq (window-deletable-p win) t)
-        (delete-window win)
+      (let ((restore-allowed nil))
+        (if (eq (window-deletable-p win) t)
+            (progn
+              (delete-window win)
+              ;; Determine if it is safe to restore the previous buffer and
+              ;; scroll state. If `last-win' was manually closed by the user
+              ;; while the shell was open, deleting the shell window will cause
+              ;; Emacs to randomly focus another surviving window. We must
+              ;; prevent injecting the saved buffer and scroll state into an
+              ;; unrelated window, which would completely destroy the user's
+              ;; layout. Therefore, we only allow restoration if we successfully
+              ;; return to the original window, or if the shell window is the
+              ;; only one left.
+              (when (and (window-live-p last-win)
+                         (window-parameter last-win 'shell-pop-is-caller))
+                (select-window last-win)
+                (setq restore-allowed t)))
+          ;; Window survives (only window on frame), safe to repurpose
+          (setq restore-allowed t))
+
+        ;; Clean up the caller identity tag
         (when (window-live-p last-win)
-          (select-window last-win)))
+          (set-window-parameter last-win 'shell-pop-is-caller nil))
 
-      (when (and shell-pop-restore-window-configuration
-                 last-buf
-                 (buffer-live-p last-buf))
-        (cond
-         ((and (eq shell-pop-restore-window-configuration 'window-state)
-               last-win-state)
-          ;; Actually restore the full window state
-          (window-state-put last-win-state (selected-window) 'safe))
+        (when (and shell-pop-restore-window-configuration
+                   last-buf
+                   (buffer-live-p last-buf)
+                   restore-allowed)
+          (cond
+           ((and (eq shell-pop-restore-window-configuration 'window-state)
+                 last-win-state)
+            ;; Actually restore the full window state
+            (window-state-put last-win-state (selected-window) 'safe))
 
-         (t
-          ;; Fallback/Manual mode ('buffer-view or t)
-          (unless (eq (window-buffer (selected-window)) last-buf)
-            (set-window-buffer (selected-window) last-buf))
+           (t
+            ;; Fallback/Manual mode ('buffer-view or t)
+            (unless (eq (window-buffer (selected-window)) last-buf)
+              (set-window-buffer (selected-window) last-buf))
 
-          ;; Restore previous window scroll state and point manually
-          ;; (idempotent)
-          (when last-win-point
-            (unless (= (window-point (selected-window)) last-win-point)
-              (set-window-point (selected-window) last-win-point)))
+            ;; Restore previous window scroll state and point manually
+            ;; (idempotent)
+            (when last-win-point
+              (unless (= (window-point (selected-window)) last-win-point)
+                (set-window-point (selected-window) last-win-point)))
 
-          (when last-win-start
-            (unless (= (window-start (selected-window)) last-win-start)
-              (set-window-start (selected-window) last-win-start t)))
+            (when last-win-start
+              (unless (= (window-start (selected-window)) last-win-start)
+                (set-window-start (selected-window) last-win-start t)))
 
-          (when last-win-hscroll
-            (unless (= (window-hscroll (selected-window)) last-win-hscroll)
-              (set-window-hscroll (selected-window) last-win-hscroll)))
+            (when last-win-hscroll
+              (unless (= (window-hscroll (selected-window)) last-win-hscroll)
+                (set-window-hscroll (selected-window) last-win-hscroll)))
 
-          (when last-win-vscroll
-            (unless (= (window-vscroll (selected-window)) last-win-vscroll)
-              (set-window-vscroll (selected-window) last-win-vscroll)))))))))
+            (when last-win-vscroll
+              (unless (= (window-vscroll (selected-window)) last-win-vscroll)
+                (set-window-vscroll (selected-window) last-win-vscroll))))))))))
 
 (defun shell-pop-split-window ()
   "Split the window for popping the shell buffer."
