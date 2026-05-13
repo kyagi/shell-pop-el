@@ -48,6 +48,8 @@
 
 ;;; Code:
 
+;;; `defvar', `declare-function', and `defgroup'
+
 (eval-when-compile
   (defvar shell-pop-universal-key)
   (defvar eshell-last-input-start)
@@ -72,14 +74,16 @@
   "Shell-pop."
   :group 'shell)
 
-;; internal{
+;;; Internal
+
 (defvar shell-pop-internal-mode "shell")
 (defvar shell-pop-internal-mode-buffer "*shell*")
 (defvar shell-pop-internal-mode-func (lambda () (shell)))
 (defvar shell-pop-last-shell-buffer-index 1)
 (defvar-local shell-pop--is-shell-buffer nil
   "Non-nil if the current buffer is managed by `shell-pop'.")
-;; internal}
+
+;;; Defcustom
 
 (defvaralias 'shell-pop-window-height 'shell-pop-window-size)
 (defcustom shell-pop-window-size 30
@@ -172,12 +176,23 @@ The value is a list with these items:
   :type 'boolean
   :group 'shell-pop)
 
-(defcustom shell-pop-restore-window-configuration t
-  "If non-nil, restore the window configuration when `shell-pop' is closed.
+(defcustom shell-pop-restore-window-configuration 'buffer-view
+  "Control how the original window is restored when closing `shell-pop'.
 
-shell-pop's window is deleted in any case. This variable has no
-effect when `shell-pop-window-position' value is \"full\"."
-  :type 'boolean
+If the value is `buffer-view' (or any non-nil value other than
+`window-state'), restore the previous buffer along with its `window-start',
+`window-point', `hscroll', and `vscroll'.
+
+If the value is `window-state', restore the full window state using
+`window-state-put'. This is a complete visual restoration that includes margins,
+fringes, and scroll bars. Note that this will overwrite any display changes made
+by background processes or minor modes while the shell buffer was visible.
+
+If the value is nil, do not restore the previous window configuration."
+  :type '(choice
+          (const :tag "Restore buffer and scroll state" buffer-view)
+          (const :tag "Restore full window state" window-state)
+          (const :tag "Do not restore" nil))
   :group 'shell-pop)
 
 (defcustom shell-pop-cleanup-buffer-at-process-exit t
@@ -222,6 +237,8 @@ The input format is the same as that of `kbd'."
   "Hook run when the shell's process exits."
   :type 'hook
   :group 'shell-pop)
+
+;;; Functions
 
 (defun shell-pop--shell-buffer-name (index)
   "Return the shell buffer name for the given INDEX."
@@ -465,6 +482,13 @@ With prefix ARG, switch to or create a specific shell buffer index."
                 (replace-regexp-in-string "\\\\" "/" default-directory)))
          (last-buf (current-buffer))
          (last-win (selected-window))
+         ;; Capture these BEFORE switching windows
+         (start (window-start last-win))
+         (hscroll (window-hscroll last-win))
+         (vscroll (window-vscroll last-win))
+         (point (window-point last-win))
+         (state (when (eq shell-pop-restore-window-configuration 'window-state)
+                  (window-state-get last-win)))
          ;; Only save full config in full mode so we don't accidentally revert
          ;; independent frame layout changes when closing a standard split
          (win-conf (when (shell-pop--full-p)
@@ -491,9 +515,16 @@ With prefix ARG, switch to or create a specific shell buffer index."
              default-directory)))
       (shell-pop--switch-to-shell-buffer index))
 
+    ;; Save to the current window
     (set-window-parameter nil 'shell-pop-is-window t)
     (set-window-parameter nil 'shell-pop-last-window last-win)
     (set-window-parameter nil 'shell-pop-last-buffer last-buf)
+    (set-window-parameter nil 'shell-pop-last-win-start start)
+    (set-window-parameter nil 'shell-pop-last-win-hscroll hscroll)
+    (set-window-parameter nil 'shell-pop-last-win-vscroll vscroll)
+    (set-window-parameter nil 'shell-pop-last-win-point point)
+    (set-window-parameter nil 'shell-pop-last-win-state state)
+
     (when (shell-pop--full-p)
       (set-window-parameter nil 'shell-pop-window-config win-conf))
 
@@ -511,6 +542,11 @@ With prefix ARG, switch to or create a specific shell buffer index."
          (win (selected-window))
          (last-win (window-parameter win 'shell-pop-last-window))
          (last-buf (window-parameter win 'shell-pop-last-buffer))
+         (last-win-start (window-parameter win 'shell-pop-last-win-start))
+         (last-win-hscroll (window-parameter win 'shell-pop-last-win-hscroll))
+         (last-win-vscroll (window-parameter win 'shell-pop-last-win-vscroll))
+         (last-win-point (window-parameter win 'shell-pop-last-win-point))
+         (last-win-state (window-parameter win 'shell-pop-last-win-state))
          (win-conf (window-parameter win 'shell-pop-window-config)))
     ;; Strip the identity so the window doesn't trap toggles if it survives
     (set-window-parameter win 'shell-pop-is-window nil)
@@ -530,11 +566,37 @@ With prefix ARG, switch to or create a specific shell buffer index."
         (when (window-live-p last-win)
           (select-window last-win)))
 
-      ;; The variable is named "restore-window-configuration", but its
-      ;; intended behavior is actually to just restore the originating buffer.
-      (when shell-pop-restore-window-configuration
-        (when (and last-buf (buffer-live-p last-buf))
-          (set-window-buffer (selected-window) last-buf))))))
+      (when (and shell-pop-restore-window-configuration
+                 last-buf
+                 (buffer-live-p last-buf))
+        (cond
+         ((and (eq shell-pop-restore-window-configuration 'window-state)
+               last-win-state)
+          ;; Actually restore the full window state
+          (window-state-put last-win-state (selected-window) 'safe))
+
+         (t
+          ;; Fallback/Manual mode ('buffer-view or t)
+          (unless (eq (window-buffer (selected-window)) last-buf)
+            (set-window-buffer (selected-window) last-buf))
+
+          ;; Restore previous window scroll state and point manually
+          ;; (idempotent)
+          (when last-win-point
+            (unless (= (window-point (selected-window)) last-win-point)
+              (set-window-point (selected-window) last-win-point)))
+
+          (when last-win-start
+            (unless (= (window-start (selected-window)) last-win-start)
+              (set-window-start (selected-window) last-win-start t)))
+
+          (when last-win-hscroll
+            (unless (= (window-hscroll (selected-window)) last-win-hscroll)
+              (set-window-hscroll (selected-window) last-win-hscroll)))
+
+          (when last-win-vscroll
+            (unless (= (window-vscroll (selected-window)) last-win-vscroll)
+              (set-window-vscroll (selected-window) last-win-vscroll)))))))))
 
 (defun shell-pop-split-window ()
   "Split the window for popping the shell buffer."
