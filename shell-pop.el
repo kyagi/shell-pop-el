@@ -383,10 +383,6 @@ With prefix ARG, switch to or create a specific shell buffer index."
          (last-win (when (window-live-p win)
                      (window-parameter win 'shell-pop-last-window))))
 
-    (when (and shell-pop-cleanup-buffer-at-process-exit
-               (buffer-live-p buf))
-      (kill-buffer buf))
-
     (when (window-live-p last-win)
       (set-window-parameter last-win 'shell-pop-is-caller nil))
 
