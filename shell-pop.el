@@ -181,7 +181,7 @@ The value is a list with these items:
 
 If the value is `buffer-view' (or any non-nil value other than
 `window-state'), restore the previous buffer along with its `window-start',
-`window-point', `hscroll', and `vscroll'.
+`window-point', `win-hscroll', and `win-vscroll'.
 
 If the value is `window-state', restore the full window state using
 `window-state-put'. This is a complete visual restoration that includes margins,
@@ -197,6 +197,14 @@ If the value is nil, do not restore the previous window configuration."
 
 (defcustom shell-pop-cleanup-buffer-at-process-exit t
   "If non-nil, cleanup the shell's buffer after its process exits."
+  :type 'boolean
+  :group 'shell-pop)
+
+(defcustom shell-pop-prevent-scroll t
+  "If non-nil, prevent the original window from scrolling when popping up.
+
+This forces the window's `window-start' to remain the same and lets Emacs
+adjust the point automatically if it falls outside the new visible area."
   :type 'boolean
   :group 'shell-pop)
 
@@ -483,19 +491,19 @@ With prefix ARG, switch to or create a specific shell buffer index."
   "Pop up the shell buffer designated by INDEX."
   (run-hooks 'shell-pop-in-hook)
   (let* ((inhibit-redisplay t)
-         (w (if (listp index)
-                (let ((ret (shell-pop-get-unused-internal-mode-buffer-window)))
-                  (setq index (car ret))
-                  (cdr ret))
-              (shell-pop-get-internal-mode-buffer-window index)))
+         (win (if (listp index)
+                  (let ((ret (shell-pop-get-unused-internal-mode-buffer-window)))
+                    (setq index (car ret))
+                    (cdr ret))
+                (shell-pop-get-internal-mode-buffer-window index)))
          (cwd (when default-directory
                 (replace-regexp-in-string "\\\\" "/" default-directory)))
          (last-buf (current-buffer))
          (last-win (selected-window))
          ;; Capture these BEFORE switching windows
-         (start (window-start last-win))
-         (hscroll (window-hscroll last-win))
-         (vscroll (window-vscroll last-win))
+         (win-start (window-start last-win))
+         (win-hscroll (window-hscroll last-win))
+         (win-vscroll (window-vscroll last-win))
          (point (window-point last-win))
          (state (when (eq shell-pop-restore-window-configuration 'window-state)
                   (window-state-get last-win)))
@@ -505,10 +513,13 @@ With prefix ARG, switch to or create a specific shell buffer index."
                      (list (current-window-configuration) (point-marker)))))
     ;; Navigate to the target window BEFORE deleting other windows
     ;; to prevent a crash if the target window is unselected in 'full' mode.
-    (if w
-        (select-window w)
+    (if win
+        (select-window win)
       (unless (shell-pop--full-p)
         (let ((new-window (shell-pop-split-window)))
+          (when (and shell-pop-prevent-scroll
+                     (string= shell-pop-window-position "bottom"))
+            (set-window-start last-win win-start))
           (select-window new-window))))
 
     (when (shell-pop--full-p)
@@ -529,9 +540,9 @@ With prefix ARG, switch to or create a specific shell buffer index."
     (set-window-parameter nil 'shell-pop-is-window t)
     (set-window-parameter nil 'shell-pop-last-window last-win)
     (set-window-parameter nil 'shell-pop-last-buffer last-buf)
-    (set-window-parameter nil 'shell-pop-last-win-start start)
-    (set-window-parameter nil 'shell-pop-last-win-hscroll hscroll)
-    (set-window-parameter nil 'shell-pop-last-win-vscroll vscroll)
+    (set-window-parameter nil 'shell-pop-last-win-start win-start)
+    (set-window-parameter nil 'shell-pop-last-win-hscroll win-hscroll)
+    (set-window-parameter nil 'shell-pop-last-win-vscroll win-vscroll)
     (set-window-parameter nil 'shell-pop-last-win-point point)
     (set-window-parameter nil 'shell-pop-last-win-state state)
     (set-window-parameter last-win 'shell-pop-is-caller t)
