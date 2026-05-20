@@ -380,8 +380,11 @@ With prefix ARG, switch to or create a specific shell buffer index."
                  (window-height win))))
     (round (* size (/ (- 100 shell-pop-window-height) 100.0)))))
 
-(defun shell-pop--kill-and-delete-window ()
-  "Kill the current shell buffer and safely delete its window."
+(defun shell-pop--eshell-exit-hook-delete-window ()
+  "Clean up `shell-pop' window state and safely delete or repurpose the window.
+Reset 'shell-pop-is-caller on the originating window. If the current window is
+deletable, delete it. Otherwise, switch its buffer to the original caller
+buffer, falling back to the scratch buffer if that buffer is no longer alive."
   ;; Unified Eshell cleanup to mirror process-sentinel behavior exactly.
   (let* ((inhibit-redisplay t)
          (buf (current-buffer))
@@ -409,7 +412,7 @@ With prefix ARG, switch to or create a specific shell buffer index."
 (defun shell-pop--set-exit-action ()
   "Set the action to perform when the shell process exits."
   (if (string= shell-pop-internal-mode "eshell")
-      (add-hook 'eshell-exit-hook 'shell-pop--kill-and-delete-window t t)
+      (add-hook 'eshell-exit-hook 'shell-pop--eshell-exit-hook-delete-window t t)
     (let ((process (get-buffer-process (current-buffer))))
       (when process
         (set-process-sentinel
