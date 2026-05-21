@@ -5,7 +5,7 @@
 
 The **shell-pop** Emacs package provides on-demand access to a terminal through a single, configurable key binding.
 
-The package supports multiple terminal implementations, including `term`, `eshell`, `ansi-term`, `vterm`, and `eat`, and ensures your original window configuration is restored when the terminal is hidden.
+The package supports multiple terminal implementations, including `term`, `eshell`, `ansi-term`, `vterm`,`eat` and `ghostel`, and ensures your original window configuration is restored when the terminal is hidden.
 
 ## Installation
 
@@ -111,6 +111,20 @@ Here are the exact configurations for the most popular Emacs shells. Simply copy
                                      (eat shell-pop-term-shell))))))
 ```
 
+#### ghostel
+
+*Note: Requires the `ghostel` package to be installed.*
+
+```elisp
+(with-eval-after-load 'shell-pop
+  (setopt shell-pop-shell-type '("ghostel" "*ghostel*"
+                                 (lambda ()
+                                   (when (fboundp 'ghostel)
+                                     (let ((ghostel-shell shell-pop-term-shell))
+                                       (ghostel)))))))
+```
+
+
 #### Shell
 ```elisp
 (with-eval-after-load 'shell-pop
@@ -171,7 +185,7 @@ If non-nil, cleans up the shell's buffer automatically after its underlying proc
 
 ### M-x Customize
 
-Use `M-x customize-variable RET shell-pop-shell-type RET` to customize the shell to use. Six pre-set options are: `shell`, `terminal`, `ansi-term`, `eshell`, `vterm`, and `eat`. You can also set your custom shell if you use other configuration.
+Use `M-x customize-variable RET shell-pop-shell-type RET` to customize the shell to use. Six pre-set options are: `shell`, `terminal`, `ansi-term`, `eshell`, `vterm`, `eat` and `ghostel`. You can also set your custom shell if you use other configuration.
 
 For the `terminal` and `ansi-term` options, you can set the underlying shell by customizing `shell-pop-term-shell`. By default, `shell-file-name` is used, but you can also specify paths like `/bin/tcsh`, `/bin/bash`, or `/bin/zsh`.
 

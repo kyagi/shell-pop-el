@@ -30,14 +30,14 @@
 ;; single, configurable key binding.
 ;;
 ;; The package supports multiple terminal implementations, including `term',
-;; `eshell', `ansi-term', `vterm', and `eat', and ensures your original window
+;; `eshell', `ansi-term', `vterm', `eat' and `ghostel`, and ensures your original window
 ;; configuration is restored when the terminal is hidden.
 ;;
 ;; Configuration:
 ;; --------------
 ;; Use M-x customize-variable RET `shell-pop-shell-type' RET to customize the
 ;; shell to use. Six pre-set options are: `shell', `terminal', `ansi-term',
-;; `eshell', `vterm', and `eat'. You can also set your custom shell if you use
+;; `eshell', `vterm', `eat' and `ghostel'. You can also set your custom shell if you use
 ;; other configuration.
 ;;
 ;; For `terminal' and `ansi-term' options, you can set the underlying shell by
@@ -69,6 +69,9 @@
 (declare-function vterm-send-return "vterm")
 (declare-function eat "eat")
 (declare-function eat-term-send-string "eat")
+(declare-function ghostel "ghostel")
+(declare-function ghostel-send-string "ghostel")
+
 
 (defgroup shell-pop ()
   "Shell-pop."
@@ -160,7 +163,14 @@ The value is a list with these items:
                  ("eat" "*eat*"
                   (lambda ()
                     (when (fboundp 'eat)
-                      (eat shell-pop-term-shell))))))
+                      (eat shell-pop-term-shell)))))
+	  (const :tag "ghostel"
+                 ("ghostel" "*ghostel*"
+                  (lambda ()
+                    (when (fboundp 'ghostel)
+                      (let ((ghostel-shell shell-pop-term-shell))
+                        (ghostel))))))
+	  )
   :set 'shell-pop--set-shell-type
   :group 'shell-pop)
 
@@ -262,7 +272,7 @@ The input format is the same as that of `kbd'."
       (if (or (and (fboundp 'term-check-proc)
                    (term-check-proc bufname))
               (string= shell-pop-internal-mode "eshell")
-              (and (member shell-pop-internal-mode '("vterm" "eat"))
+              (and (member shell-pop-internal-mode '("vterm" "eat" "ghostel"))
                    (let ((proc (get-buffer-process bufname)))
                      (and proc (memq (process-status proc) '(run stop))))))
           bufname
@@ -349,6 +359,11 @@ With prefix ARG, switch to or create a specific shell buffer index."
       ;; Use the process object directly if eat-terminal isn't in scope
       (process-send-string proc (concat "cd " (shell-quote-argument cwd) "\nclear\n")))))
 
+(defun shell-pop--cd-to-cwd-ghostel (cwd)
+  "Change the terminal's directory to CWD and clear the screen in ghostel."
+  (when (fboundp 'ghostel-send-string)
+    (ghostel-send-string (concat "cd " (shell-quote-argument cwd) "\nclear\n"))))
+
 (defun shell-pop--cd-to-cwd (cwd)
   "Change the current working directory of the shell buffer to CWD."
   (let ((abspath (expand-file-name cwd)))
@@ -360,6 +375,8 @@ With prefix ARG, switch to or create a specific shell buffer index."
            (shell-pop--cd-to-cwd-vterm abspath))
           ((string= shell-pop-internal-mode "eat")
            (shell-pop--cd-to-cwd-eat abspath))
+          ((string= shell-pop-internal-mode "ghostel")
+           (shell-pop--cd-to-cwd-ghostel abspath))
           (t
            (shell-pop--cd-to-cwd-term abspath)))))
 
