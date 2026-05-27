@@ -262,7 +262,7 @@ The input format is the same as that of `kbd'."
       (if (or (and (fboundp 'term-check-proc)
                    (term-check-proc bufname))
               (string= shell-pop-internal-mode "eshell")
-              (and (member shell-pop-internal-mode '("vterm" "eat"))
+              (and (member shell-pop-internal-mode '("shell" "vterm" "eat"))
                    (let ((proc (get-buffer-process bufname)))
                      (and proc (memq (process-status proc) '(run stop))))))
           bufname
