@@ -30,15 +30,15 @@
 ;; single, configurable key binding.
 ;;
 ;; The package supports multiple terminal implementations, including `term',
-;; `eshell', `ansi-term', `vterm', `eat' and `ghostel`, and ensures your original window
-;; configuration is restored when the terminal is hidden.
+;; `eshell', `ansi-term', `vterm', `eat', `ghostel', and ensures your original
+;; window configuration is restored when the terminal is hidden.
 ;;
 ;; Configuration:
 ;; --------------
 ;; Use M-x customize-variable RET `shell-pop-shell-type' RET to customize the
 ;; shell to use. Six pre-set options are: `shell', `terminal', `ansi-term',
-;; `eshell', `vterm', `eat' and `ghostel'. You can also set your custom shell if you use
-;; other configuration.
+;; `eshell', `vterm', `eat' and `ghostel'. You can also set your custom shell if
+;; you use other configuration.
 ;;
 ;; For `terminal' and `ansi-term' options, you can set the underlying shell by
 ;; customizing `shell-pop-term-shell'. By default, `shell-file-name' is used.
@@ -55,6 +55,8 @@
   (defvar eshell-last-input-start)
   (defvar eshell-last-input-end)
   (defvar term-raw-map)
+  (defvar ghostel-shell)
+  (defvar vterm-shell)
   (defvar eat-terminal)) ; Mute compiler warning for optional variable
 
 (declare-function eshell-send-input "esh-mode")
@@ -164,13 +166,12 @@ The value is a list with these items:
                   (lambda ()
                     (when (fboundp 'eat)
                       (eat shell-pop-term-shell)))))
-	  (const :tag "ghostel"
+          (const :tag "ghostel"
                  ("ghostel" "*ghostel*"
                   (lambda ()
                     (when (fboundp 'ghostel)
                       (let ((ghostel-shell shell-pop-term-shell))
-                        (ghostel))))))
-	  )
+                        (ghostel)))))))
   :set 'shell-pop--set-shell-type
   :group 'shell-pop)
 
@@ -272,7 +273,7 @@ The input format is the same as that of `kbd'."
       (if (or (and (fboundp 'term-check-proc)
                    (term-check-proc bufname))
               (string= shell-pop-internal-mode "eshell")
-              (and (member shell-pop-internal-mode '("shell" "vterm" "eat" "ghostel")))
+              (and (member shell-pop-internal-mode '("shell" "vterm" "eat" "ghostel"))
                    (let ((proc (get-buffer-process bufname)))
                      (and proc (memq (process-status proc) '(run stop))))))
           bufname
