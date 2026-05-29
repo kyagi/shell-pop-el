@@ -400,7 +400,7 @@ With prefix ARG, switch to or create a specific shell buffer index."
 
 (defun shell-pop--eshell-exit-hook-delete-window ()
   "Clean up `shell-pop' window state and safely delete or repurpose the window.
-Reset 'shell-pop-is-caller on the originating window. If the current window is
+Reset \='shell-pop-is-caller on the originating window. If the current window is
 deletable, delete it. Otherwise, switch its buffer to the original caller
 buffer, falling back to the scratch buffer if that buffer is no longer alive."
   ;; Unified Eshell cleanup to mirror process-sentinel behavior exactly.
