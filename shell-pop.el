@@ -550,11 +550,16 @@ buffer, falling back to the scratch buffer if that buffer is no longer alive."
     ;; "buffer poisoning" where the user's active code buffer gets its working
     ;; directory overwritten.
     (let ((default-directory
-           (if (and shell-pop-default-directory
-                    (file-directory-p shell-pop-default-directory))
-               (file-name-as-directory (expand-file-name
-                                        shell-pop-default-directory))
-             default-directory)))
+           (cond
+            ((and shell-pop-default-directory
+                  (file-directory-p shell-pop-default-directory))
+             (file-name-as-directory (expand-file-name
+                                      shell-pop-default-directory)))
+            ((and default-directory
+                  (file-directory-p default-directory))
+             default-directory)
+            (t
+             (expand-file-name "~/")))))
       (shell-pop--switch-to-shell-buffer index))
 
     ;; Save to the current window
