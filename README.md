@@ -156,6 +156,14 @@ The percentage of the frame used for the shell buffer window size.
 
 This option allows you to generate the shell window with the same width as the current Emacs frame. It is beneficial when you use multiple side-by-side windows in Emacs. For more details, see [Issue #21](https://github.com/kyagi/shell-pop-el/pull/21#issuecomment-48876673).
 
+#### `shell-pop-per-window` (Default: `nil`)
+
+If non-nil, toggles shell-pop separately for each source window. Invoking `shell-pop` from a non-shell window hides only the popup associated with that window, or creates one if none exists. This option has no effect when `shell-pop-full-span` is non-nil or when shell-pop uses a full-frame popup.
+
+#### `shell-pop-pop-under-shell` (Default: `nil`)
+
+If non-nil, invoking `shell-pop` with a prefix argument from an existing shell-pop window creates another popup instead of switching the current popup to the requested shell buffer. This option has no effect when `shell-pop-full-span` is non-nil.
+
 #### `shell-pop-default-directory` (Default: `nil`)
 
 If non-nil, changes the current directory to this specific path when first starting the shell.
