@@ -315,13 +315,9 @@ With prefix ARG, switch to or create a specific shell buffer index."
                    (prefix-numeric-value arg))))
             (shell-pop--switch-to-shell-buffer target-index)))
       ;; Scenario B: The user is OUTSIDE the shell (e.g., in a code buffer)
-      (if (and window (null arg))
-          ;; The shell window (window) is visible somewhere else, and the user
-          ;; didn't pass a prefix, to that shell window and close it.
-          (progn
-            (select-window window)
-            (shell-pop-out))
-        (shell-pop-up index)))))
+      ;; To behave like v0.64, we unconditionally run shell-pop-up to focus
+      ;; the window and evaluate directory changes, instead of closing it.
+      (shell-pop-up index))))
 
 (defun shell-pop--cd-to-cwd-eshell (cwd)
   "Change the current working directory to CWD in eshell."
