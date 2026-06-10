@@ -346,11 +346,6 @@ With prefix ARG, switch to or create a specific shell buffer index."
        (popup-window
         (select-window popup-window)
         (shell-pop-out))
-       ((and window (null arg))
-        ;; The shell window (window) is visible somewhere else, and the user
-        ;; didn't pass a prefix, to that shell window and close it.
-        (select-window window)
-        (shell-pop-out))
        (t
         (shell-pop-up index))))))
 
