@@ -219,6 +219,27 @@ adjust the point automatically if it falls outside the new visible area."
   :type 'boolean
   :group 'shell-pop)
 
+(defcustom shell-pop-per-window nil
+  "If non-nil, toggle shell-pop separately for each source window.
+
+When this option is enabled, invoking `shell-pop' from a non-shell window hides
+only the popup associated with that window, or creates one if none exists.
+
+This option has no effect when `shell-pop-full-span' is non-nil or when
+shell-pop uses a full-frame popup."
+  :type 'boolean
+  :group 'shell-pop)
+
+(defcustom shell-pop-pop-under-shell nil
+  "If non-nil, popping another shell from a shell-pop window creates a new popup.
+
+When this option is nil, invoking `shell-pop' with a prefix argument from an
+existing shell-pop window switches that window to the requested shell buffer.
+
+This option has no effect when `shell-pop-full-span' is non-nil."
+  :type 'boolean
+  :group 'shell-pop)
+
 (defun shell-pop--set-universal-key (symbol value)
   "Set the universal key for `shell-pop' using SYMBOL and VALUE."
   (set-default symbol value)
@@ -294,30 +315,39 @@ With prefix ARG, switch to or create a specific shell buffer index."
   (when (and (minibufferp) (window-live-p (minibuffer-selected-window)))
     (select-window (minibuffer-selected-window)))
   (let* ((index (or arg shell-pop-last-shell-buffer-index))
+         (source-window (selected-window))
+         (per-window (shell-pop--per-window-p))
+         (popup-window (and per-window
+                            (null arg)
+                            (shell-pop--popup-window-for-source-window
+                             source-window index)))
          ;; Safely check for an existing window only if index is an integer. A
          ;; raw prefix arg like '(4) will bypass this and let shell-pop-up
          ;; handle it.
          (window (and (integerp index)
+                      (not per-window)
                       (shell-pop-get-internal-mode-buffer-window index))))
     ;; Scenario A: The user is already INSIDE a shell window
     (if (or shell-pop--is-shell-buffer
             (window-parameter nil 'shell-pop-is-window))
-        ;; No prefix (null arg): The user pressed a hotkey. It runs
-        ;; `shell-pop-out' to close the shell.
-        (if (null arg)
-            (shell-pop-out)
-          ;; If a prefix arg is provided while inside the shell: A raw C-u '(4)
-          ;; should find a new unused index dynamically. Otherwise, use the
-          ;; exact numeric prefix (e.g., M-2 -> 2).
-          (let ((target-index
-                 (if (listp arg)
-                     (car (shell-pop-get-unused-internal-mode-buffer-window))
-                   (prefix-numeric-value arg))))
-            (shell-pop--switch-to-shell-buffer target-index)))
+        (if (shell-pop--pop-under-shell-p)
+            (shell-pop--toggle-target-from-shell
+             (shell-pop--target-index arg))
+          ;; No prefix (null arg): The user pressed a hotkey. It runs
+          ;; `shell-pop-out' to close the shell.
+          (if (null arg)
+              (shell-pop-out)
+            ;; If a prefix arg is provided while inside the shell: A raw C-u '(4)
+            ;; should find a new unused index dynamically. Otherwise, use the
+            ;; exact numeric prefix (e.g., M-2 -> 2).
+            (shell-pop--switch-to-shell-buffer (shell-pop--target-index arg))))
       ;; Scenario B: The user is OUTSIDE the shell (e.g., in a code buffer)
-      ;; To behave like v0.64, we unconditionally run shell-pop-up to focus
-      ;; the window and evaluate directory changes, instead of closing it.
-      (shell-pop-up index))))
+      (cond
+       (popup-window
+        (select-window popup-window)
+        (shell-pop-out))
+       (t
+        (shell-pop-up index))))))
 
 (defun shell-pop--cd-to-cwd-eshell (cwd)
   "Change the current working directory to CWD in eshell."
@@ -381,6 +411,55 @@ With prefix ARG, switch to or create a specific shell buffer index."
   "Return non-nil if the shell window should span fully."
   (or (string= shell-pop-window-position "full")
       (>= shell-pop-window-height 100)))
+
+(defun shell-pop--per-window-p ()
+  "Return non-nil when shell-pop should toggle per source window."
+  (and shell-pop-per-window
+       (not shell-pop-full-span)
+       (not (shell-pop--full-p))))
+
+(defun shell-pop--pop-under-shell-p ()
+  "Return non-nil when shell-pop should create popups from shell windows."
+  (and shell-pop-pop-under-shell
+       (not shell-pop-full-span)))
+
+(defun shell-pop--popup-window-for-source-window (source-window &optional index)
+  "Return the shell-pop window associated with SOURCE-WINDOW and INDEX, if any."
+  (when (window-live-p source-window)
+    (let ((bufname (and index (shell-pop--shell-buffer-name index))))
+      (catch 'found
+        (dolist (win (window-list (window-frame source-window) 'no-minibuf))
+          (when (and (window-parameter win 'shell-pop-is-window)
+                     (eq (window-parameter win 'shell-pop-last-window)
+                         source-window)
+                     (or (null bufname)
+                         (equal (buffer-name (window-buffer win)) bufname)))
+            (throw 'found win)))))))
+
+(defun shell-pop--target-index (arg)
+  "Return the shell-pop target index for prefix ARG."
+  (if arg
+      (if (listp arg)
+          (car (shell-pop-get-unused-internal-mode-buffer-window))
+        (prefix-numeric-value arg))
+    shell-pop-last-shell-buffer-index))
+
+(defun shell-pop--toggle-target-from-shell (index)
+  "Toggle shell-pop buffer INDEX from the selected shell-pop window."
+  (setq shell-pop-last-shell-buffer-index index)
+  (let ((bufname (shell-pop--shell-buffer-name index))
+        (target-window (if (shell-pop--per-window-p)
+                           (shell-pop--popup-window-for-source-window
+                            (selected-window) index)
+                         (shell-pop-get-internal-mode-buffer-window index))))
+    (cond
+     ((equal (buffer-name) bufname)
+      (shell-pop-out))
+     (target-window
+      (select-window target-window)
+      (shell-pop-out))
+     (t
+      (shell-pop-up index)))))
 
 (defsubst shell-pop--split-side-p ()
   "Return non-nil if the shell window should be split on the side."
@@ -508,15 +587,17 @@ buffer, falling back to the scratch buffer if that buffer is no longer alive."
   "Pop up the shell buffer designated by INDEX."
   (run-hooks 'shell-pop-in-hook)
   (let* ((inhibit-redisplay t)
-         (win (if (listp index)
-                  (let ((ret (shell-pop-get-unused-internal-mode-buffer-window)))
-                    (setq index (car ret))
-                    (cdr ret))
-                (shell-pop-get-internal-mode-buffer-window index)))
          (cwd (when default-directory
                 (replace-regexp-in-string "\\\\" "/" default-directory)))
          (last-buf (current-buffer))
          (last-win (selected-window))
+         (win (if (listp index)
+                  (let ((ret (shell-pop-get-unused-internal-mode-buffer-window)))
+                    (setq index (car ret))
+                    (cdr ret))
+                (if (shell-pop--per-window-p)
+                    (shell-pop--popup-window-for-source-window last-win index)
+                  (shell-pop-get-internal-mode-buffer-window index))))
          ;; Capture these BEFORE switching windows
          (win-start (window-start last-win))
          (win-hscroll (window-hscroll last-win))
