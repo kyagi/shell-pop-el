@@ -551,7 +551,7 @@ buffer, falling back to the scratch buffer if that buffer is no longer alive."
   (let ((bufname (shell-pop--shell-buffer-name index)))
     (if (get-buffer bufname)
         (switch-to-buffer bufname)
-      (funcall (eval shell-pop-internal-mode-func))
+      (funcall shell-pop-internal-mode-func)
       (rename-buffer bufname)
       (shell-pop--set-exit-action))
     (setq shell-pop--is-shell-buffer t)
